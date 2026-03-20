@@ -1,5 +1,5 @@
 class Admin::CompaniesController < Admin::BaseController
-  before_action :set_company, only: [:show, :enrich, :generate_content, :build_demo, :send_email, :mark_replied, :mark_converted]
+  before_action :set_company, only: [:show, :enrich, :generate_content, :build_demo, :send_email, :mark_replied, :mark_converted, :update_contact, :restore_email]
 
   PER_PAGE = 25
 
@@ -188,6 +188,38 @@ class Admin::CompaniesController < Admin::BaseController
                 notice: "Email batch accodata per #{count} aziende."
   end
 
+  # PATCH /admin/companies/:id/update_contact
+  def update_contact
+    new_email = contact_params[:email].to_s.strip
+
+    # Preserva la mail originale (trovata dal scraping) se viene sovrascritta per la prima volta
+    if new_email.present? &&
+       new_email != @company.email.to_s &&
+       @company.original_email.blank? &&
+       @company.email.present?
+      @company.original_email = @company.email
+    end
+
+    if @company.update(contact_params)
+      redirect_to admin_company_path(@company),
+                  notice: "Contatti aggiornati."
+    else
+      redirect_to admin_company_path(@company),
+                  alert: "Errore: #{@company.errors.full_messages.join(', ')}"
+    end
+  end
+
+  # PATCH /admin/companies/:id/restore_email
+  def restore_email
+    if @company.original_email.blank?
+      return redirect_to admin_company_path(@company),
+                         alert: "Nessuna email originale da ripristinare."
+    end
+
+    @company.update!(email: @company.original_email, email_status: "found", original_email: nil)
+    redirect_to admin_company_path(@company), notice: "Email originale ripristinata."
+  end
+
   # POST /admin/companies/:id/mark_replied
   def mark_replied
     @company.update!(status: "replied")
@@ -219,6 +251,10 @@ class Admin::CompaniesController < Admin::BaseController
 
   def set_company
     @company = Company.kept.find(params[:id])
+  end
+
+  def contact_params
+    params.require(:company).permit(:email, :email_status, :notes, :original_email)
   end
 
   def filter_by_status(scope)

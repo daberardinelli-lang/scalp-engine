@@ -31,12 +31,12 @@ class DemoBuildJob < ApplicationJob
       return
     end
 
-    result = Demo::TemplateRenderer.render(demo: demo)
+    result = DemoBuilder::TemplateRenderer.render(demo: demo)
     unless result.success?
       raise "TemplateRenderer failed for #{company.name}: #{result.errors.join(', ')}"
     end
 
-    deploy_result = Demo::DeployService.call(demo: demo, html: result.html)
+    deploy_result = DemoBuilder::DeployService.call(demo: demo, html: result.html)
     unless deploy_result.success?
       raise "DeployService failed for #{company.name}: #{deploy_result.errors.join(', ')}"
     end

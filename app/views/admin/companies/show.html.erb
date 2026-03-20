@@ -156,6 +156,16 @@
           <dd class="font-medium"><%= @company.category.humanize %></dd>
         </div>
         <div class="flex justify-between">
+          <dt class="text-gray-500">Telefono</dt>
+          <dd class="font-medium">
+            <% if @company.phone.present? %>
+              <span class="text-gray-700"><%= @company.phone %></span>
+            <% else %>
+              <span class="text-gray-400">Non trovato</span>
+            <% end %>
+          </dd>
+        </div>
+        <div class="flex justify-between">
           <dt class="text-gray-500">Sito web</dt>
           <dd class="font-medium <%= @company.has_website ? 'text-red-600' : 'text-emerald-600' %>">
             <%= @company.has_website ? "Presente" : "Assente ✓" %>
@@ -171,6 +181,18 @@
             <% end %>
           </dd>
         </div>
+        <% if @company.original_email.present? %>
+          <div class="flex justify-between items-center">
+            <dt class="text-gray-500">Email originale</dt>
+            <dd class="font-medium text-right">
+              <span class="text-amber-600 text-xs"><%= @company.original_email %></span>
+              <%= button_to "↩ Ripristina",
+                    restore_email_admin_company_path(@company),
+                    method: :patch,
+                    class: "ml-2 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded transition" %>
+            </dd>
+          </div>
+        <% end %>
         <div class="flex justify-between">
           <dt class="text-gray-500">Stato email</dt>
           <dd><%= @company.email_status %></dd>
@@ -192,6 +214,34 @@
           </div>
         <% end %>
       </dl>
+    </div>
+
+    <%# Modifica contatti %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Modifica contatti</h2>
+      <%= form_with model: @company, url: update_contact_admin_company_path(@company), method: :patch, local: true, class: "space-y-3" do |f| %>
+        <div>
+          <%= f.label :email, "Email", class: "block text-xs font-medium text-gray-600 mb-1" %>
+          <%= f.email_field :email,
+                placeholder: "es: info@bistrot.it",
+                class: "w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        </div>
+        <div>
+          <%= f.label :email_status, "Stato email", class: "block text-xs font-medium text-gray-600 mb-1" %>
+          <%= f.select :email_status,
+                [["found — trovata ✓", "found"], ["manual — inserita manuale", "manual"],
+                 ["skip — da saltare", "skip"], ["unknown — sconosciuta", "unknown"]],
+                {},
+                class: "w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        </div>
+        <div>
+          <%= f.label :notes, "Note", class: "block text-xs font-medium text-gray-600 mb-1" %>
+          <%= f.text_area :notes, rows: 2,
+                placeholder: "Note interne…",
+                class: "w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" %>
+        </div>
+        <%= f.submit "Salva", class: "w-full bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium px-4 py-1.5 rounded cursor-pointer transition" %>
+      <% end %>
     </div>
 
     <%# Azioni pipeline %>
@@ -223,7 +273,7 @@
         <%# Preview demo (se già deployata) %>
         <% if @company.demo&.deployed? %>
           <%= link_to "🔗 Anteprima demo →",
-                demo_preview_path(@company.demo.subdomain),
+                "/demos/#{@company.demo.subdomain}",
                 target: "_blank", rel: "noopener",
                 class: "block w-full text-left bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-medium px-4 py-2 rounded-lg transition" %>
         <% end %>

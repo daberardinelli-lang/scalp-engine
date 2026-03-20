@@ -1,12 +1,12 @@
-# app/services/demo/template_renderer.rb
+# app/services/demo_builder/template_renderer.rb
 #
 # Renderizza il template Liquid HTML a partire da un record Demo + Company.
 # Restituisce la stringa HTML completa pronta per essere scritta su disco.
 #
 # Uso:
-#   html = Demo::TemplateRenderer.render(demo: demo)
+#   html = DemoBuilder::TemplateRenderer.render(demo: demo)
 #
-module Demo
+module DemoBuilder
   class TemplateRenderer
     TEMPLATE_PATH = Rails.root.join("app", "views", "demo_templates", "default.html.liquid").freeze
 

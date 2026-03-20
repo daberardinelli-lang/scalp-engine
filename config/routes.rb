@@ -33,6 +33,8 @@ Rails.application.routes.draw do
         post :send_email       # avvia OutreachEmailJob su singola company
         post :mark_replied
         post :mark_converted
+        patch :update_contact  # aggiorna email, email_status, note
+        patch :restore_email   # ripristina email originale scraped
       end
     end
     resources :leads,  only: [:index, :show]

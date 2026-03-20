@@ -24,7 +24,7 @@ class Company < ApplicationRecord
 
   scope :active,           -> { kept.where(opted_out_at: nil) }
   scope :without_website,  -> { where(has_website: false) }
-  scope :with_email,       -> { where(email_status: "found") }
+  scope :with_email,       -> { where(email_status: %w[found manual]) }
   scope :contactable,      -> { active.without_website.with_email.where(status: %w[enriched demo_built]) }
   scope :by_province,      ->(p)   { where(province: p) }
   scope :by_category,      ->(cat) { where(category: cat) }
@@ -34,7 +34,7 @@ class Company < ApplicationRecord
   end
 
   def contactable?
-    !opted_out? && !discarded? && !has_website? && email_status == "found"
+    !opted_out? && !discarded? && !has_website? && %w[found manual].include?(email_status)
   end
 
   def pipeline_step

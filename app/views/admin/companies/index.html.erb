@@ -86,6 +86,8 @@
           <th class="px-4 py-3 text-left">Azienda</th>
           <th class="px-4 py-3 text-left">Categoria</th>
           <th class="px-4 py-3 text-left">Città</th>
+          <th class="px-4 py-3 text-left">Telefono</th>
+          <th class="px-4 py-3 text-left">Email</th>
           <th class="px-4 py-3 text-left">Rating</th>
           <th class="px-4 py-3 text-left">Stato</th>
           <th class="px-4 py-3 text-left">Scoperta il</th>
@@ -97,15 +99,29 @@
           <tr class="hover:bg-gray-50 transition">
             <td class="px-4 py-3 font-medium text-gray-900">
               <%= company.name %>
-              <% if company.phone.present? %>
-                <div class="text-xs text-gray-400"><%= company.phone %></div>
-              <% end %>
             </td>
             <td class="px-4 py-3 text-gray-600"><%= company.category.humanize %></td>
             <td class="px-4 py-3 text-gray-600">
               <%= company.city %>
               <% if company.province.present? %>
                 <span class="text-gray-400">(<%=company.province%>)</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-gray-600 text-xs">
+              <% if company.phone.present? %>
+                <%= company.phone %>
+              <% else %>
+                <span class="text-gray-300">—</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3">
+              <% if company.email.present? %>
+                <span class="text-emerald-600 text-xs font-medium"><%= company.email %></span>
+                <% if company.opted_out_at.present? %>
+                  <div class="text-xs text-red-400">opt-out</div>
+                <% end %>
+              <% else %>
+                <span class="text-gray-300 text-xs">—</span>
               <% end %>
             </td>
             <td class="px-4 py-3">

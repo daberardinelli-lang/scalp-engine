@@ -1,14 +1,14 @@
-# app/services/demo/deploy_service.rb
+# app/services/demo_builder/deploy_service.rb
 #
 # Scrive l'HTML generato su disco e aggiorna il record Demo con html_path,
 # deployed_at ed expires_at.
 #
 # Uso:
-#   result = Demo::DeployService.call(demo: demo, html: html_string)
+#   result = DemoBuilder::DeployService.call(demo: demo, html: html_string)
 #   result.success? # => true
 #   result.html_path # => "/path/to/storage/demos/nome-azienda-abc123/index.html"
 #
-module Demo
+module DemoBuilder
   class DeployService
     DEMO_VALIDITY_DAYS = 90
 

@@ -1,8 +1,8 @@
-# test/services/demo/deploy_service_test.rb
+# test/services/demo_builder/deploy_service_test.rb
 require "test_helper"
 require "tmpdir"
 
-class Demo::DeployServiceTest < ActiveSupport::TestCase
+class DemoBuilder::DeployServiceTest < ActiveSupport::TestCase
   SAMPLE_HTML = "<!DOCTYPE html><html><body><h1>Test Demo</h1></body></html>".freeze
 
   setup do
@@ -30,7 +30,7 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
 
   test "scrive il file HTML su disco e aggiorna il record Demo" do
     with_tmp_storage do
-      result = Demo::DeployService.call(demo: @demo, html: SAMPLE_HTML)
+      result = DemoBuilder::DeployService.call(demo: @demo, html: SAMPLE_HTML)
 
       assert result.success?, result.errors.inspect
       assert File.exist?(result.html_path), "il file HTML deve esistere su disco"
@@ -49,7 +49,7 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
       dir = File.join(@tmp_dir, @demo.subdomain)
       refute Dir.exist?(dir), "la directory non deve esistere prima del deploy"
 
-      result = Demo::DeployService.call(demo: @demo, html: SAMPLE_HTML)
+      result = DemoBuilder::DeployService.call(demo: @demo, html: SAMPLE_HTML)
 
       assert result.success?
       assert Dir.exist?(dir), "la directory deve essere creata"
@@ -58,8 +58,8 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
 
   test "sovrascrive un deploy precedente" do
     with_tmp_storage do
-      Demo::DeployService.call(demo: @demo, html: "<html>Versione 1</html>")
-      result = Demo::DeployService.call(demo: @demo, html: "<html>Versione 2</html>")
+      DemoBuilder::DeployService.call(demo: @demo, html: "<html>Versione 1</html>")
+      result = DemoBuilder::DeployService.call(demo: @demo, html: "<html>Versione 2</html>")
 
       assert result.success?
       assert_equal "<html>Versione 2</html>", File.read(result.html_path)
@@ -70,7 +70,7 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
     with_tmp_storage do
       before = Time.current
 
-      Demo::DeployService.call(demo: @demo, html: SAMPLE_HTML)
+      DemoBuilder::DeployService.call(demo: @demo, html: SAMPLE_HTML)
       @demo.reload
 
       expected_min = before + 89.days
@@ -83,14 +83,14 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
   # ─── Test: errori di validazione ──────────────────────────────────────────
 
   test "fallisce se HTML è blank" do
-    result = Demo::DeployService.call(demo: @demo, html: "")
+    result = DemoBuilder::DeployService.call(demo: @demo, html: "")
 
     refute result.success?
     assert result.errors.any? { |e| e.include?("HTML") }
   end
 
   test "fallisce se HTML è nil" do
-    result = Demo::DeployService.call(demo: @demo, html: nil)
+    result = DemoBuilder::DeployService.call(demo: @demo, html: nil)
 
     refute result.success?
     assert result.errors.any? { |e| e.include?("HTML") }
@@ -98,7 +98,7 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
 
   test "fallisce se il subdomain del demo è blank" do
     @demo.subdomain = ""
-    result = Demo::DeployService.call(demo: @demo, html: SAMPLE_HTML)
+    result = DemoBuilder::DeployService.call(demo: @demo, html: SAMPLE_HTML)
 
     refute result.success?
     assert result.errors.any? { |e| e.include?("Demo") || e.include?("subdomain") }
@@ -112,7 +112,7 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
 
   test "Demo#deployed? ritorna true dopo il deploy" do
     with_tmp_storage do
-      Demo::DeployService.call(demo: @demo, html: SAMPLE_HTML)
+      DemoBuilder::DeployService.call(demo: @demo, html: SAMPLE_HTML)
       @demo.reload
       assert @demo.deployed?
     end
@@ -120,7 +120,7 @@ class Demo::DeployServiceTest < ActiveSupport::TestCase
 
   test "Demo#active? ritorna true dopo il deploy (non scaduto)" do
     with_tmp_storage do
-      Demo::DeployService.call(demo: @demo, html: SAMPLE_HTML)
+      DemoBuilder::DeployService.call(demo: @demo, html: SAMPLE_HTML)
       @demo.reload
       assert @demo.active?
     end
