@@ -44,13 +44,19 @@ class DiscoveryJob < ApplicationJob
 
     raise ArgumentError, "Campagna #{campaign_id} senza query di ricerca definita." if query.blank?
 
-    Rails.logger.info "[DiscoveryJob] CAMPAIGN START campaign=#{campaign.name} query=#{query} location=#{location} radius=#{radius}"
+    # Outreach mode: include anche prospect con sito web (medici, tabaccai, etc.)
+    # Web Agency mode: salta chi ha già un sito
+    skip_websites = campaign.skip_websites?
+
+    Rails.logger.info "[DiscoveryJob] CAMPAIGN START campaign=#{campaign.name} query=#{query} " \
+                      "location=#{location} radius=#{radius} skip_websites=#{skip_websites}"
 
     result = Discovery::GooglePlacesService.call(
-      query:       query,
-      location:    location,
-      radius:      radius,
-      campaign_id: campaign_id
+      query:         query,
+      location:      location,
+      radius:        radius,
+      campaign_id:   campaign_id,
+      skip_websites: skip_websites
     )
 
     log_result(result)

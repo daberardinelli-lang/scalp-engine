@@ -5,9 +5,11 @@ class Admin::CompaniesController < Admin::BaseController
 
   def index
     base = Company.kept
+                  .includes(:campaign)
                   .order(created_at: :desc)
                   .then { |q| filter_by_status(q) }
                   .then { |q| filter_by_category(q) }
+                  .then { |q| filter_by_campaign(q) }
                   .then { |q| filter_by_search(q) }
 
     @total_count = base.count
@@ -282,6 +284,11 @@ class Admin::CompaniesController < Admin::BaseController
 
   def filter_by_category(scope)
     params[:category].present? ? scope.where(category: params[:category]) : scope
+  end
+
+  def filter_by_campaign(scope)
+    return scope if params[:campaign_id].blank?
+    scope.where(campaign_id: params[:campaign_id])
   end
 
   def filter_by_search(scope)

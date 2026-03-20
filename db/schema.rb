@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_20_100002) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_20_200001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -22,6 +22,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_100002) do
     t.string "discovery_source", default: "google_places", null: false
     t.string "email_body_template"
     t.string "email_subject_template"
+    t.string "mode", default: "outreach", null: false
     t.string "name", null: false
     t.string "operator_profile"
     t.string "target_profile"
@@ -30,6 +31,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_100002) do
     t.boolean "use_demo", default: false, null: false
     t.bigint "user_id"
     t.index ["active"], name: "index_campaigns_on_active"
+    t.index ["mode"], name: "index_campaigns_on_mode"
     t.index ["user_id"], name: "index_campaigns_on_user_id"
   end
 

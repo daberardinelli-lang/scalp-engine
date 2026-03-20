@@ -72,7 +72,7 @@ class Admin::CampaignsController < Admin::BaseController
 
   def campaign_params
     params.require(:campaign).permit(
-      :name, :description,
+      :name, :description, :mode,
       :operator_profile, :target_profile,
       :discovery_source, :discovery_query,
       :email_subject_template, :email_body_template,

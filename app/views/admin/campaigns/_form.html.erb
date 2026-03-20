@@ -27,6 +27,19 @@
             class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
     </div>
 
+    <div>
+      <%= f.label :mode, "Modalità campagna *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.select :mode,
+            [["📧 Outreach — invia proposte con template personalizzato", "outreach"],
+             ["🌐 Web Agency — trova PMI senza sito e proponi siti web", "web_agency"]],
+            { selected: campaign.mode.presence || "outreach" },
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+      <p class="text-xs text-gray-400 mt-1">
+        <strong>Outreach</strong>: cerca qualsiasi prospect (anche con sito web).
+        <strong>Web Agency</strong>: include solo attività senza sito web.
+      </p>
+    </div>
+
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <%= f.label :operator_profile, "Profilo operatore", class: "block text-sm font-medium text-gray-700 mb-1" %>

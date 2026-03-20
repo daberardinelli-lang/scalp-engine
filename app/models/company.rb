@@ -27,7 +27,10 @@ class Company < ApplicationRecord
   scope :active,           -> { kept.where(opted_out_at: nil) }
   scope :without_website,  -> { where(has_website: false) }
   scope :with_email,       -> { where(email_status: %w[found manual]) }
-  scope :contactable,      -> { active.without_website.with_email.where(status: %w[enriched demo_built contacted]) }
+  # Scope contactable base (web agency): senza sito web
+  # Per outreach usare contactable_outreach o il metodo #contactable? che è campaign-aware
+  scope :contactable,          -> { active.without_website.with_email.where(status: %w[enriched demo_built contacted]) }
+  scope :contactable_outreach, -> { active.with_email.where(status: %w[enriched contacted]) }
   scope :by_province,      ->(p)   { where(province: p) }
   scope :by_category,      ->(cat) { where(category: cat) }
 
@@ -36,7 +39,12 @@ class Company < ApplicationRecord
   end
 
   def contactable?
-    !opted_out? && !discarded? && !has_website? && %w[found manual].include?(email_status)
+    return false if opted_out? || discarded?
+    return false unless %w[found manual].include?(email_status)
+    # Campagne outreach: i prospect possono avere un sito web
+    # Web Agency (no campagna): richiedere assenza sito
+    return true if campaign&.outreach?
+    !has_website?
   end
 
   def pipeline_step

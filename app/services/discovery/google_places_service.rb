@@ -79,11 +79,14 @@ module Discovery
     # Supporta due modalità:
     #   1. category: (classica) — usa CATEGORY_QUERY_MAP per costruire la query
     #   2. query: (libera)      — query Maps diretta (es. "medici di base Roma")
-    # campaign_id: associa le company trovate alla Campaign
-    def initialize(category: nil, query: nil, location:, radius: 15_000, campaign_id: nil, http_client: nil)
+    # campaign_id:    associa le company trovate alla Campaign
+    # skip_websites:  true (default) = salta aziende con sito web (Web Agency)
+    #                 false          = include tutti (Outreach — medici, tabaccai, etc.)
+    def initialize(category: nil, query: nil, location:, radius: 15_000, campaign_id: nil, skip_websites: true, http_client: nil)
       @category      = category
       @free_query    = query
       @campaign_id   = campaign_id
+      @skip_websites = skip_websites
       @location      = location
       @radius        = radius
       @api_key       = ENV.fetch("GOOGLE_PLACES_API_KEY") { raise "GOOGLE_PLACES_API_KEY non configurata" }
@@ -182,8 +185,8 @@ module Discovery
       details = fetch_place_details(place_id)
       return unless details
 
-      # Salta se l'azienda ha già un sito web
-      if details["websiteUri"].present?
+      # Salta se l'azienda ha già un sito web (solo in modalità Web Agency)
+      if @skip_websites && details["websiteUri"].present?
         @skipped_count += 1
         Rails.logger.debug "[GooglePlacesService] Saltata (ha sito): #{details.dig('displayName', 'text')}"
         return
@@ -255,7 +258,7 @@ module Discovery
         phone:              details["nationalPhoneNumber"],
         maps_rating:        details["rating"],
         maps_reviews_count: details["userRatingCount"] || 0,
-        has_website:        false,
+        has_website:        details["websiteUri"].present?,
         maps_photo_urls:    photo_urls,
         status:             "discovered"
       }

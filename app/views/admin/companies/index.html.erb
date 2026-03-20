@@ -70,8 +70,17 @@
             { selected: params[:category] },
             class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
     </div>
+    <% if Campaign.active.any? %>
+      <div>
+        <%= f.label :campaign_id, "Campagna", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.select :campaign_id,
+              [["Tutte", ""]] + Campaign.active.ordered.map { |c| [c.name, c.id] },
+              { selected: params[:campaign_id] },
+              class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+      </div>
+    <% end %>
     <%= f.submit "Filtra", class: "bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium px-4 py-1.5 rounded cursor-pointer" %>
-    <% if params[:q].present? || params[:status].present? || params[:category].present? %>
+    <% if params[:q].present? || params[:status].present? || params[:category].present? || params[:campaign_id].present? %>
       <%= link_to "Reset", admin_companies_path, class: "text-sm text-gray-500 hover:text-gray-700 py-1.5" %>
     <% end %>
   <% end %>
@@ -84,7 +93,7 @@
       <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
         <tr>
           <th class="px-4 py-3 text-left">Azienda</th>
-          <th class="px-4 py-3 text-left">Categoria</th>
+          <th class="px-4 py-3 text-left">Categoria / Campagna</th>
           <th class="px-4 py-3 text-left">Città</th>
           <th class="px-4 py-3 text-left">Telefono</th>
           <th class="px-4 py-3 text-left">Email</th>
@@ -100,7 +109,17 @@
             <td class="px-4 py-3 font-medium text-gray-900">
               <%= company.name %>
             </td>
-            <td class="px-4 py-3 text-gray-600"><%= company.category.humanize %></td>
+            <td class="px-4 py-3">
+              <% if company.campaign.present? %>
+                <span class="inline-flex items-center gap-1 text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
+                  📡 <%= company.campaign.name %>
+                </span>
+              <% elsif company.category.present? %>
+                <span class="text-gray-600 text-sm"><%= company.category.humanize %></span>
+              <% else %>
+                <span class="text-gray-300">—</span>
+              <% end %>
+            </td>
             <td class="px-4 py-3 text-gray-600">
               <%= company.city %>
               <% if company.province.present? %>
@@ -252,27 +271,27 @@
       </div>
     <% end %>
 
-    <script>
-      function discoverTab(tab) {
-        var campaign = document.getElementById('panel-campaign');
-        var classic  = document.getElementById('panel-classic');
-        var tCampaign = document.getElementById('tab-campaign');
-        var tClassic  = document.getElementById('tab-classic');
-        if (tab === 'campaign') {
-          campaign.classList.remove('hidden'); classic.classList.add('hidden');
-          tCampaign.className = 'flex-1 px-4 py-2 bg-emerald-600 text-white transition';
-          tClassic.className  = 'flex-1 px-4 py-2 bg-white text-gray-500 hover:bg-gray-50 transition';
-        } else {
-          campaign.classList.add('hidden'); classic.classList.remove('hidden');
-          tClassic.className  = 'flex-1 px-4 py-2 bg-emerald-600 text-white transition';
-          tCampaign.className = 'flex-1 px-4 py-2 bg-white text-gray-500 hover:bg-gray-50 transition';
-        }
-      }
-    </script>
   </div>
 </div>
 
 <script>
+  // Tab discovery: Campagna vs Categoria classica
+  function discoverTab(tab) {
+    var campaign  = document.getElementById('panel-campaign');
+    var classic   = document.getElementById('panel-classic');
+    var tCampaign = document.getElementById('tab-campaign');
+    var tClassic  = document.getElementById('tab-classic');
+    if (tab === 'campaign') {
+      campaign.classList.remove('hidden'); classic.classList.add('hidden');
+      tCampaign.className = 'flex-1 px-4 py-2 bg-emerald-600 text-white transition';
+      tClassic.className  = 'flex-1 px-4 py-2 bg-white text-gray-500 hover:bg-gray-50 transition';
+    } else {
+      campaign.classList.add('hidden'); classic.classList.remove('hidden');
+      tClassic.className  = 'flex-1 px-4 py-2 bg-emerald-600 text-white transition';
+      tCampaign.className = 'flex-1 px-4 py-2 bg-white text-gray-500 hover:bg-gray-50 transition';
+    }
+  }
+
   // Chiudi modal con ESC
   document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -288,4 +307,21 @@
     const r = this.querySelector('[name="radius"]');
     r.value = parseInt(r.value) * 1000;
   });
+
+  // Auto-apri modal e pre-seleziona campagna se arrivato da link "Avvia Discovery" di una campagna
+  (function() {
+    var params = new URLSearchParams(window.location.search);
+    var openDiscovery = params.get('open_discovery');
+    var campaignId    = params.get('campaign_id');
+    if (openDiscovery === '1') {
+      document.getElementById('discover-modal').classList.remove('hidden');
+      // Seleziona tab campagna
+      discoverTab('campaign');
+      // Pre-seleziona la campagna nel select (se passata)
+      if (campaignId) {
+        var sel = document.querySelector('#panel-campaign select[name="campaign_id"]');
+        if (sel) sel.value = campaignId;
+      }
+    }
+  })();
 </script>

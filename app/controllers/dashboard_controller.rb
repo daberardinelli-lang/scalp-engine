@@ -1,46 +1,28 @@
 class DashboardController < ApplicationController
   def index
-    # ── Pipeline aziende ────────────────────────────────────────────────────
-    @pipeline = Company::STATUSES.index_with do |status|
-      Company.kept.where(status: status).count
-    end
-    @total_companies = Company.kept.count
-
-    # ── Metriche email (ultimi 30 giorni) ───────────────────────────────────
-    leads_sent = Lead.sent
-
-    @email_stats = {
-      total_sent:      leads_sent.count,
-      sent_month:      leads_sent.where("email_sent_at >= ?", 30.days.ago).count,
-      total_opened:    Lead.opened.count,
-      total_clicked:   Lead.clicked.count,
-      total_opted_out: Lead.where(outcome: "opted_out").count,
-      open_rate:       rate(Lead.opened.count, leads_sent.count),
-      click_rate:      rate(Lead.clicked.count, leads_sent.count)
+    # ── Stats Web Agency (company senza campagna) ────────────────────────────
+    wa_companies = Company.kept.where(campaign_id: nil)
+    @web_agency = {
+      total:     wa_companies.count,
+      contacted: wa_companies.where(status: "contacted").count,
+      converted: wa_companies.where(status: "converted").count,
+      demos:     Demo.joins(:company).where(companies: { campaign_id: nil }).deployed.count,
+      leads_sent: Lead.joins(:company).where(companies: { campaign_id: nil }).sent.count
     }
 
-    # ── Demo deployate ──────────────────────────────────────────────────────
-    @demos_deployed = Demo.deployed.count
-    @total_views    = Demo.sum(:view_count)
+    # ── Stats Outreach (company con campagna) ────────────────────────────────
+    out_companies = Company.kept.where.not(campaign_id: nil)
+    @outreach = {
+      campaigns:  Campaign.active.count,
+      prospects:  out_companies.count,
+      contacted:  out_companies.where(status: "contacted").count,
+      converted:  out_companies.where(status: "converted").count,
+      leads_sent: Lead.joins(:company).where.not(companies: { campaign_id: nil }).sent.count
+    }
 
-    # ── Attività recente ────────────────────────────────────────────────────
+    # ── Attività recente (condivisa) ─────────────────────────────────────────
     @recent_leads = Lead.includes(:company, :demo)
                         .order(updated_at: :desc)
-                        .limit(8)
-
-    # ── Conversioni ─────────────────────────────────────────────────────────
-    @conversions = {
-      contacted: Company.kept.where(status: "contacted").count,
-      replied:   Company.kept.where(status: "replied").count,
-      converted: Company.kept.where(status: "converted").count
-    }
-  end
-
-  private
-
-  def rate(numerator, denominator)
-    return 0.0 if denominator.zero?
-
-    ((numerator.to_f / denominator) * 100).round(1)
+                        .limit(6)
   end
 end
