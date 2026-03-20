@@ -4,9 +4,14 @@ class Admin::CompaniesController < Admin::BaseController
   PER_PAGE = 25
 
   def index
+    # Rilevamento modalità: esplicita via ?mode= oppure implicita da campaign_id
+    @mode = params[:mode].presence
+    @mode ||= "outreach" if params[:campaign_id].present?
+
     base = Company.kept
                   .includes(:campaign)
                   .order(created_at: :desc)
+                  .then { |q| filter_by_mode(q) }
                   .then { |q| filter_by_status(q) }
                   .then { |q| filter_by_category(q) }
                   .then { |q| filter_by_campaign(q) }
@@ -19,13 +24,16 @@ class Admin::CompaniesController < Admin::BaseController
 
     @companies = base.offset((@current_page - 1) * PER_PAGE).limit(PER_PAGE)
 
+    # Stats filtrate per modalità corrente
+    mode_base = mode_scope
     @stats = {
-      total:       Company.kept.count,
-      discovered:  Company.kept.where(status: "discovered").count,
-      enriched:    Company.kept.where(status: "enriched").count,
-      demo_built:  Company.kept.where(status: "demo_built").count,
-      contacted:   Company.kept.where(status: "contacted").count,
-      converted:   Company.kept.where(status: "converted").count
+      total:       mode_base.count,
+      discovered:  mode_base.where(status: "discovered").count,
+      enriched:    mode_base.where(status: "enriched").count,
+      demo_built:  mode_base.where(status: "demo_built").count,
+      contacted:   mode_base.where(status: "contacted").count,
+      replied:     mode_base.where(status: "replied").count,
+      converted:   mode_base.where(status: "converted").count
     }
   end
 
@@ -276,6 +284,22 @@ class Admin::CompaniesController < Admin::BaseController
 
   def contact_params
     params.require(:company).permit(:email, :email_status, :notes, :original_email)
+  end
+
+  def mode_scope
+    case @mode
+    when "web_agency" then Company.kept.where(campaign_id: nil)
+    when "outreach"   then Company.kept.where.not(campaign_id: nil)
+    else Company.kept
+    end
+  end
+
+  def filter_by_mode(scope)
+    case @mode
+    when "web_agency" then scope.where(campaign_id: nil)
+    when "outreach"   then scope.where.not(campaign_id: nil)
+    else scope
+    end
   end
 
   def filter_by_status(scope)

@@ -99,7 +99,7 @@
       <p class="text-xs text-gray-400 mb-3">
         Query: <strong class="text-gray-600"><%= @campaign.discovery_query.presence || @campaign.target_profile.presence || "—" %></strong>
       </p>
-      <%= link_to admin_companies_path(campaign_id: @campaign.id, open_discovery: "1"),
+      <%= link_to admin_companies_path(campaign_id: @campaign.id, open_discovery: "1", mode: "outreach"),
             class: "flex items-center justify-center gap-2 w-full bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium py-2.5 rounded-lg transition" do %>
         🔍 Avvia Discovery per questa campagna
       <% end %>
@@ -111,14 +111,14 @@
     <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
         <h3 class="font-semibold text-gray-800">Ultimi prospect (<%= @stats[:total] %>)</h3>
-        <%= link_to "Vedi tutti →", admin_companies_path(campaign_id: @campaign.id),
+        <%= link_to "Vedi tutti →", admin_companies_path(campaign_id: @campaign.id, mode: "outreach"),
               class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
       </div>
 
       <% if @companies.empty? %>
         <div class="p-8 text-center text-gray-400 text-sm">
           Nessun prospect trovato ancora.
-          <%= link_to "🔍 Avvia Discovery →", admin_companies_path(campaign_id: @campaign.id, open_discovery: "1"), class: "underline text-emerald-600" %>
+          <%= link_to "🔍 Avvia Discovery →", admin_companies_path(campaign_id: @campaign.id, open_discovery: "1", mode: "outreach"), class: "underline text-emerald-600" %>
         </div>
       <% else %>
         <table class="w-full text-sm">

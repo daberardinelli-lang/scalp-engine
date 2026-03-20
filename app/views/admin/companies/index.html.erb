@@ -1,27 +1,54 @@
 <%# app/views/admin/companies/index.html.erb %>
 
+<%# ── Header contestuale per modalità ─────────────────────────────────────── %>
 <div class="flex items-center justify-between mb-6">
   <div>
-    <h1 class="text-2xl font-bold text-gray-900">Aziende</h1>
-    <p class="text-sm text-gray-500 mt-1"><%= @total_count %> aziende totali</p>
+    <% if @mode == "web_agency" %>
+      <div class="text-xs text-gray-400 mb-1">
+        <%= link_to "← Dashboard", root_path, class: "hover:text-gray-600" %>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        🌐 Siti Web per PMI
+        <span class="text-sm font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Aziende</span>
+      </h1>
+      <p class="text-sm text-gray-500 mt-1"><%= @total_count %> PMI trovate</p>
+    <% elsif @mode == "outreach" %>
+      <div class="text-xs text-gray-400 mb-1">
+        <%= link_to "← Campagne", admin_campaigns_path, class: "hover:text-gray-600" %>
+      </div>
+      <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        📧 Campagne Outreach
+        <span class="text-sm font-normal text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">Prospect</span>
+      </h1>
+      <p class="text-sm text-gray-500 mt-1"><%= @total_count %> prospect totali</p>
+    <% else %>
+      <h1 class="text-2xl font-bold text-gray-900">Aziende</h1>
+      <p class="text-sm text-gray-500 mt-1"><%= @total_count %> aziende totali</p>
+    <% end %>
   </div>
+
+  <%# Bottoni batch — visibilità condizionale per modalità %>
   <div class="flex gap-2 flex-wrap">
     <%= button_to "⟳ Arricchisci tutte",
           batch_enrich_admin_companies_path,
           class: "bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
           data: { turbo_confirm: "Avviare l'arricchimento batch su tutte le aziende in stato 'discovered'?" } %>
-    <%= button_to "✦ Genera AI (batch)",
-          batch_generate_admin_companies_path,
-          class: "bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
-          data: { turbo_confirm: "Avviare la generazione AI su tutte le aziende in stato 'enriched'?" } %>
-    <%= button_to "🏗 Build demos",
-          batch_build_admin_companies_path,
-          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
-          data: { turbo_confirm: "Avviare il build HTML per tutte le demo con contenuti AI pronti?" } %>
+
+    <% unless @mode == "outreach" %>
+      <%= button_to "✦ Genera AI (batch)",
+            batch_generate_admin_companies_path,
+            class: "bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
+            data: { turbo_confirm: "Avviare la generazione AI su tutte le aziende in stato 'enriched'?" } %>
+      <%= button_to "🏗 Build demos",
+            batch_build_admin_companies_path,
+            class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
+            data: { turbo_confirm: "Avviare il build HTML per tutte le demo con contenuti AI pronti?" } %>
+    <% end %>
+
     <%= button_to "📧 Invia email (batch)",
           batch_email_admin_companies_path,
           class: "bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
-          data: { turbo_confirm: "Inviare le email outreach a tutte le aziende contattabili con demo deployata?" } %>
+          data: { turbo_confirm: "Inviare le email outreach a tutte le aziende contattabili?" } %>
     <button
       onclick="document.getElementById('discover-modal').classList.remove('hidden')"
       class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
@@ -30,17 +57,19 @@
   </div>
 </div>
 
-<%# Statistiche pipeline %>
-<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
-  <% [
-    ["Trovate",   @stats[:discovered],  "bg-gray-50",   "text-gray-700",   "discovered"],
-    ["Arricchite",@stats[:enriched],    "bg-blue-50",   "text-blue-700",   "enriched"],
-    ["Demo pronte",@stats[:demo_built], "bg-purple-50", "text-purple-700", "demo_built"],
-    ["Contattate",@stats[:contacted],   "bg-yellow-50", "text-yellow-700", "contacted"],
-    ["Hanno risposto",@stats[:replied], "bg-orange-50", "text-orange-700", "replied"],
-    ["Convertite",@stats[:converted],   "bg-emerald-50","text-emerald-700","converted"]
-  ].each do |label, count, bg, text, status_val| %>
-    <%= link_to admin_companies_path(status: status_val, category: params[:category], q: params[:q]),
+<%# Statistiche pipeline — filtrate per modalità %>
+<div class="grid grid-cols-2 sm:grid-cols-3 <%= @mode == "outreach" ? "lg:grid-cols-5" : "lg:grid-cols-6" %> gap-3 mb-6">
+  <% pills = [
+    ["Trovate",      @stats[:discovered], "bg-gray-50",    "text-gray-700",   "discovered"],
+    ["Arricchite",   @stats[:enriched],   "bg-blue-50",    "text-blue-700",   "enriched"],
+    ["Contattate",   @stats[:contacted],  "bg-yellow-50",  "text-yellow-700", "contacted"],
+    ["Hanno risposto",@stats[:replied],   "bg-orange-50",  "text-orange-700", "replied"],
+    ["Convertite",   @stats[:converted],  "bg-emerald-50", "text-emerald-700","converted"]
+  ]
+  pills.unshift(["Demo pronte", @stats[:demo_built], "bg-purple-50", "text-purple-700", "demo_built"]) unless @mode == "outreach"
+  %>
+  <% pills.each do |label, count, bg, text, status_val| %>
+    <%= link_to admin_companies_path(status: status_val, category: params[:category], q: params[:q], mode: @mode, campaign_id: params[:campaign_id]),
           class: "#{bg} border border-gray-200 rounded-lg p-3 text-center hover:shadow-sm transition" do %>
       <div class="text-2xl font-bold <%= text %>"><%= count %></div>
       <div class="text-xs text-gray-500 mt-0.5"><%= label %></div>
@@ -51,6 +80,9 @@
 <%# Filtri %>
 <div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
   <%= form_with url: admin_companies_path, method: :get, local: true, class: "flex flex-wrap gap-3 items-end" do |f| %>
+    <%# Preserva modalità tra i submit del form %>
+    <%= f.hidden_field :mode, value: @mode if @mode.present? %>
+
     <div>
       <%= f.label :q, "Cerca", class: "block text-xs font-medium text-gray-600 mb-1" %>
       <%= f.text_field :q, value: params[:q], placeholder: "Nome, città, provincia…",
@@ -63,25 +95,33 @@
             { selected: params[:status] },
             class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
     </div>
-    <div>
-      <%= f.label :category, "Categoria", class: "block text-xs font-medium text-gray-600 mb-1" %>
-      <%= f.select :category,
-            [["Tutte", ""]] + Company::CATEGORIES.map { |c| [c.humanize, c] },
-            { selected: params[:category] },
-            class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
-    </div>
-    <% if Campaign.active.any? %>
+
+    <% unless @mode == "outreach" %>
       <div>
-        <%= f.label :campaign_id, "Campagna", class: "block text-xs font-medium text-gray-600 mb-1" %>
-        <%= f.select :campaign_id,
-              [["Tutte", ""]] + Campaign.active.ordered.map { |c| [c.name, c.id] },
-              { selected: params[:campaign_id] },
+        <%= f.label :category, "Categoria", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= f.select :category,
+              [["Tutte", ""]] + Company::CATEGORIES.map { |c| [c.humanize, c] },
+              { selected: params[:category] },
               class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
       </div>
     <% end %>
+
+    <% if @mode == "outreach" || @mode.nil? %>
+      <% campaigns = Campaign.active.ordered %>
+      <% if campaigns.any? %>
+        <div>
+          <%= f.label :campaign_id, "Campagna", class: "block text-xs font-medium text-gray-600 mb-1" %>
+          <%= f.select :campaign_id,
+                [["Tutte", ""]] + campaigns.map { |c| [c.name, c.id] },
+                { selected: params[:campaign_id] },
+                class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        </div>
+      <% end %>
+    <% end %>
+
     <%= f.submit "Filtra", class: "bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium px-4 py-1.5 rounded cursor-pointer" %>
     <% if params[:q].present? || params[:status].present? || params[:category].present? || params[:campaign_id].present? %>
-      <%= link_to "Reset", admin_companies_path, class: "text-sm text-gray-500 hover:text-gray-700 py-1.5" %>
+      <%= link_to "Reset", admin_companies_path(mode: @mode), class: "text-sm text-gray-500 hover:text-gray-700 py-1.5" %>
     <% end %>
   <% end %>
 </div>
@@ -93,7 +133,7 @@
       <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
         <tr>
           <th class="px-4 py-3 text-left">Azienda</th>
-          <th class="px-4 py-3 text-left">Categoria / Campagna</th>
+          <th class="px-4 py-3 text-left"><%= @mode == "web_agency" ? "Categoria" : "Categoria / Campagna" %></th>
           <th class="px-4 py-3 text-left">Città</th>
           <th class="px-4 py-3 text-left">Telefono</th>
           <th class="px-4 py-3 text-left">Email</th>
@@ -110,7 +150,7 @@
               <%= company.name %>
             </td>
             <td class="px-4 py-3">
-              <% if company.campaign.present? %>
+              <% if company.campaign.present? && @mode != "web_agency" %>
                 <span class="inline-flex items-center gap-1 text-xs font-medium bg-blue-50 text-blue-700 px-2 py-0.5 rounded-full">
                   📡 <%= company.campaign.name %>
                 </span>
@@ -123,7 +163,7 @@
             <td class="px-4 py-3 text-gray-600">
               <%= company.city %>
               <% if company.province.present? %>
-                <span class="text-gray-400">(<%=company.province%>)</span>
+                <span class="text-gray-400">(<%= company.province %>)</span>
               <% end %>
             </td>
             <td class="px-4 py-3 text-gray-600 text-xs">
@@ -146,7 +186,7 @@
             <td class="px-4 py-3">
               <% if company.maps_rating.present? %>
                 <span class="text-amber-500 font-medium">★ <%= company.maps_rating %></span>
-                <span class="text-gray-400 text-xs">(<%=company.maps_reviews_count%>)</span>
+                <span class="text-gray-400 text-xs">(<%= company.maps_reviews_count %>)</span>
               <% else %>
                 <span class="text-gray-300">—</span>
               <% end %>
@@ -164,19 +204,19 @@
       </tbody>
     </table>
 
-    <%# Paginazione %>
+    <%# Paginazione — preserva mode %>
     <% if @total_pages > 1 %>
       <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
         <span>Pagina <%= @current_page %> di <%= @total_pages %> (<%= @total_count %> totali)</span>
         <div class="flex gap-2">
           <% if @current_page > 1 %>
             <%= link_to "← Precedente",
-                  admin_companies_path(page: @current_page - 1, status: params[:status], category: params[:category], q: params[:q]),
+                  admin_companies_path(page: @current_page - 1, status: params[:status], category: params[:category], q: params[:q], mode: @mode, campaign_id: params[:campaign_id]),
                   class: "px-3 py-1 border border-gray-300 rounded hover:bg-gray-50" %>
           <% end %>
           <% if @current_page < @total_pages %>
             <%= link_to "Successiva →",
-                  admin_companies_path(page: @current_page + 1, status: params[:status], category: params[:category], q: params[:q]),
+                  admin_companies_path(page: @current_page + 1, status: params[:status], category: params[:category], q: params[:q], mode: @mode, campaign_id: params[:campaign_id]),
                   class: "px-3 py-1 border border-gray-300 rounded hover:bg-gray-50" %>
           <% end %>
         </div>
@@ -185,11 +225,23 @@
 
   <% else %>
     <div class="text-center py-16 text-gray-400">
-      <div class="text-4xl mb-3">🔍</div>
-      <p class="font-medium">Nessuna azienda trovata</p>
+      <div class="text-4xl mb-3"><%= @mode == "outreach" ? "📧" : "🔍" %></div>
+      <p class="font-medium">
+        <% if @mode == "web_agency" %>
+          Nessuna PMI trovata
+        <% elsif @mode == "outreach" %>
+          Nessun prospect trovato
+        <% else %>
+          Nessuna azienda trovata
+        <% end %>
+      </p>
       <p class="text-sm mt-1">
-        <% if params[:q].present? || params[:status].present? || params[:category].present? %>
+        <% if params[:q].present? || params[:status].present? || params[:category].present? || params[:campaign_id].present? %>
           Prova a modificare i filtri.
+        <% elsif @mode == "outreach" %>
+          Scegli una campagna e avvia la Discovery per trovare i primi prospect.
+        <% elsif @mode == "web_agency" %>
+          Avvia la Discovery per categoria per trovare le prime PMI.
         <% else %>
           Avvia la Discovery per trovare le prime aziende.
         <% end %>
@@ -208,6 +260,11 @@
         class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
     </div>
     <%= form_with url: discover_admin_companies_path, method: :post, local: true, class: "px-6 py-4 space-y-4" do |f| %>
+
+      <%# Passa la modalità al controller dopo il redirect %>
+      <% if @mode.present? %>
+        <%= f.hidden_field :mode, value: @mode %>
+      <% end %>
 
       <%# Tab: Campagna vs Categoria classica %>
       <div id="discover-tabs" class="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
@@ -308,14 +365,23 @@
     r.value = parseInt(r.value) * 1000;
   });
 
-  // Auto-apri modal e pre-seleziona campagna se arrivato da link "Avvia Discovery" di una campagna
+  // Imposta tab di default in base alla modalità
   (function() {
     var params = new URLSearchParams(window.location.search);
+    var mode          = params.get('mode');
     var openDiscovery = params.get('open_discovery');
     var campaignId    = params.get('campaign_id');
+
+    // In modalità web_agency: default tab = Categoria classica
+    if (mode === 'web_agency') {
+      discoverTab('classic');
+    }
+    // In modalità outreach o con open_discovery: default tab = Usa Campagna
+    // (già impostato come default nel HTML, ma gestiamo anche l'apertura automatica)
+
+    // Auto-apri modal se richiesto (da link "Avvia Discovery" di una campagna)
     if (openDiscovery === '1') {
       document.getElementById('discover-modal').classList.remove('hidden');
-      // Seleziona tab campagna
       discoverTab('campaign');
       // Pre-seleziona la campagna nel select (se passata)
       if (campaignId) {
