@@ -90,7 +90,7 @@
             </td>
             <td class="px-4 py-3 text-right flex items-center justify-end gap-2">
               <% if demo.deployed? %>
-                <%= link_to "Preview", demo_preview_path(demo.subdomain),
+                <%= link_to "Preview", "/demos/#{demo.subdomain}",
                       target: "_blank", rel: "noopener",
                       class: "text-xs text-emerald-600 hover:text-emerald-800 font-medium" %>
               <% end %>

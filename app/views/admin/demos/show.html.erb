@@ -28,7 +28,7 @@
             <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500 font-medium">Non deployata</span>
           <% end %>
           <% if @demo.deployed? %>
-            <%= link_to "🔗 Apri demo →", demo_preview_path(@demo.subdomain),
+            <%= link_to "🔗 Apri demo →", "/demos/#{@demo.subdomain}",
                   target: "_blank", rel: "noopener",
                   class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
           <% end %>
