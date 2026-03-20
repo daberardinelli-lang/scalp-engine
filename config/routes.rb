@@ -37,8 +37,13 @@ Rails.application.routes.draw do
         patch :restore_email   # ripristina email originale scraped
       end
     end
-    resources :leads,  only: [:index, :show]
-    resources :demos,  only: [:index, :show]
+    resources :leads,     only: [:index, :show]
+    resources :demos,     only: [:index, :show]
+    resources :campaigns, only: [:index, :show, :new, :create, :edit, :update, :destroy] do
+      member do
+        post :toggle_active
+      end
+    end
   end
 
   # Preview demo HTML in sviluppo (in produzione: nginx wildcard subdomain)

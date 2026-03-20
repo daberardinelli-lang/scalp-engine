@@ -2,6 +2,7 @@
 #
 # Invia l'email di outreach a una singola azienda.
 # Gestisce: creazione Lead, build HTML, invio Mailgun, aggiornamento stati.
+# Supporta Campaign con use_demo: false (salta validazione demo).
 #
 # Uso:
 #   OutreachEmailJob.perform_later(company_id: 42)
@@ -13,7 +14,8 @@ class OutreachEmailJob < ApplicationJob
   discard_on ActiveRecord::RecordNotFound
 
   def perform(company_id:)
-    company = Company.kept.find(company_id)
+    company  = Company.kept.find(company_id)
+    campaign = company.campaign
 
     # ── Validazioni pre-invio ───────────────────────────────────────────────
     unless company.contactable?
@@ -23,20 +25,26 @@ class OutreachEmailJob < ApplicationJob
       return
     end
 
-    demo = company.demo
-    unless demo&.content_generated?
-      Rails.logger.warn "[OutreachEmailJob] Skip #{company.name}: contenuti demo non generati"
-      return
-    end
+    # Demo: obbligatoria solo se la campagna (o il default) lo richiede
+    requires_demo = campaign.nil? || campaign.use_demo?
 
-    unless demo.deployed?
-      Rails.logger.warn "[OutreachEmailJob] Skip #{company.name}: demo HTML non ancora deployata"
-      return
+    demo = company.demo
+
+    if requires_demo
+      unless demo&.content_generated?
+        Rails.logger.warn "[OutreachEmailJob] Skip #{company.name}: contenuti demo non generati"
+        return
+      end
+
+      unless demo.deployed?
+        Rails.logger.warn "[OutreachEmailJob] Skip #{company.name}: demo HTML non ancora deployata"
+        return
+      end
     end
 
     # ── Crea / aggiorna Lead ────────────────────────────────────────────────
     lead = Lead.find_or_initialize_by(company: company)
-    lead.demo    = demo
+    lead.demo    = demo if demo
     lead.outcome = "pending" if lead.new_record?
     lead.save!
 

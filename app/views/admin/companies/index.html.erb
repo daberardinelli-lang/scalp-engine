@@ -189,16 +189,50 @@
         class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
     </div>
     <%= form_with url: discover_admin_companies_path, method: :post, local: true, class: "px-6 py-4 space-y-4" do |f| %>
-      <div>
+
+      <%# Tab: Campagna vs Categoria classica %>
+      <div id="discover-tabs" class="flex rounded-lg border border-gray-200 overflow-hidden text-sm font-medium">
+        <button type="button" id="tab-campaign"
+          onclick="discoverTab('campaign')"
+          class="flex-1 px-4 py-2 bg-emerald-600 text-white transition">
+          📡 Usa Campagna
+        </button>
+        <button type="button" id="tab-classic"
+          onclick="discoverTab('classic')"
+          class="flex-1 px-4 py-2 bg-white text-gray-500 hover:bg-gray-50 transition">
+          📋 Categoria classica
+        </button>
+      </div>
+
+      <%# Pannello Campagna %>
+      <div id="panel-campaign">
+        <%= f.label :campaign_id, "Campagna", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <% campaigns = Campaign.active.ordered %>
+        <% if campaigns.any? %>
+          <%= f.select :campaign_id,
+                campaigns.map { |c| [c.name, c.id] },
+                { include_blank: "— seleziona campagna —" },
+                class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        <% else %>
+          <p class="text-sm text-amber-600 bg-amber-50 rounded-lg px-3 py-2">
+            Nessuna campagna attiva.
+            <%= link_to "Crea una campagna →", new_admin_campaign_path, class: "underline" %>
+          </p>
+        <% end %>
+      </div>
+
+      <%# Pannello Categoria classica %>
+      <div id="panel-classic" class="hidden">
         <%= f.label :category, "Categoria", class: "block text-sm font-medium text-gray-700 mb-1" %>
         <%= f.select :category,
               Company::CATEGORIES.map { |c| [c.humanize, c] },
               { selected: "restaurant" },
               class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
       </div>
+
       <div>
         <%= f.label :location, "Location", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= f.text_field :location, placeholder: "es: Prato, Italia",
+        <%= f.text_field :location, placeholder: "es: Roma, Italia",
               class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
         <p class="text-xs text-gray-400 mt-1">Inserisci città e regione/nazione per risultati migliori.</p>
       </div>
@@ -217,6 +251,24 @@
         <%= f.submit "Avvia", class: "bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2 rounded-lg cursor-pointer" %>
       </div>
     <% end %>
+
+    <script>
+      function discoverTab(tab) {
+        var campaign = document.getElementById('panel-campaign');
+        var classic  = document.getElementById('panel-classic');
+        var tCampaign = document.getElementById('tab-campaign');
+        var tClassic  = document.getElementById('tab-classic');
+        if (tab === 'campaign') {
+          campaign.classList.remove('hidden'); classic.classList.add('hidden');
+          tCampaign.className = 'flex-1 px-4 py-2 bg-emerald-600 text-white transition';
+          tClassic.className  = 'flex-1 px-4 py-2 bg-white text-gray-500 hover:bg-gray-50 transition';
+        } else {
+          campaign.classList.add('hidden'); classic.classList.remove('hidden');
+          tClassic.className  = 'flex-1 px-4 py-2 bg-emerald-600 text-white transition';
+          tCampaign.className = 'flex-1 px-4 py-2 bg-white text-gray-500 hover:bg-gray-50 transition';
+        }
+      }
+    </script>
   </div>
 </div>
 

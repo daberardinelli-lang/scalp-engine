@@ -1,11 +1,7 @@
 # app/services/discovery/review_fetcher_service.rb
 #
-# Recupera le recensioni pubbliche di un'azienda tramite Google Places Details API
+# Recupera le recensioni pubbliche di un'azienda tramite Places API (New)
 # (campo `reviews` — fino a 5 recensioni, include testo, rating, autore, data).
-#
-# Non usa browser headless: è una pura chiamata API, rapida e affidabile.
-# Le recensioni vengono usate in Fase 3 da Claude AI per generare contenuti
-# personalizzati (es. "I nostri clienti dicono: ...").
 #
 # Uso:
 #   result = Discovery::ReviewFetcherService.call(
@@ -17,7 +13,7 @@
 
 module Discovery
   class ReviewFetcherService
-    PLACES_BASE_URL = "https://maps.googleapis.com"
+    PLACES_BASE_URL = "https://places.googleapis.com"
 
     Result = Struct.new(:reviews, :error, keyword_init: true)
 
@@ -26,27 +22,27 @@ module Discovery
     end
 
     def initialize(google_place_id:, http_client: nil)
-      @place_id  = google_place_id
-      @api_key   = ENV.fetch("GOOGLE_PLACES_API_KEY") { raise "GOOGLE_PLACES_API_KEY non configurata" }
-      @client    = http_client || build_client
+      @place_id = google_place_id
+      @api_key  = ENV.fetch("GOOGLE_PLACES_API_KEY") { raise "GOOGLE_PLACES_API_KEY non configurata" }
+      @client   = http_client || build_client
     end
 
     def call
-      response = @client.get("/maps/api/place/details/json", {
-        place_id: @place_id,
-        fields:   "reviews",
-        key:      @api_key,
-        language: "it",
-        reviews_sort: "newest"
-      })
-
-      data = JSON.parse(response.body)
-
-      unless data["status"] == "OK"
-        return Result.new(reviews: [], error: "Places API error: #{data['status']}")
+      response = @client.get("/v1/places/#{@place_id}") do |req|
+        req.headers["X-Goog-Api-Key"]   = @api_key
+        req.headers["X-Goog-FieldMask"] = "reviews"
+        req.params["languageCode"]       = "it"
+        req.params["reviewsSort"]        = "NEWEST"
       end
 
-      raw_reviews = data.dig("result", "reviews") || []
+      unless response.status == 200
+        data = JSON.parse(response.body) rescue {}
+        msg  = data.dig("error", "message") || response.status.to_s
+        return Result.new(reviews: [], error: "Places API error: #{msg}")
+      end
+
+      data        = JSON.parse(response.body)
+      raw_reviews = data["reviews"] || []
       reviews     = raw_reviews.map { |r| parse_review(r) }.compact
 
       Result.new(reviews: reviews, error: nil)
@@ -59,14 +55,23 @@ module Discovery
     private
 
     def parse_review(raw)
-      text = raw["text"].to_s.strip
+      # Places API (New) struttura:
+      # raw["text"]["text"], raw["rating"], raw["authorAttribution"]["displayName"], raw["publishTime"]
+      text = raw.dig("text", "text").to_s.strip
       return nil if text.blank?
 
+      publish_time = raw["publishTime"]
+      date = begin
+        Time.parse(publish_time).strftime("%Y-%m-%d")
+      rescue
+        Time.now.strftime("%Y-%m-%d")
+      end
+
       {
-        "author" => raw["author_name"].to_s.strip,
+        "author" => raw.dig("authorAttribution", "displayName").to_s.strip,
         "rating" => raw["rating"].to_i,
         "text"   => text.truncate(500),
-        "date"   => Time.at(raw["time"].to_i).strftime("%Y-%m-%d")
+        "date"   => date
       }
     end
 

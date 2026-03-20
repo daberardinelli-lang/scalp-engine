@@ -32,29 +32,47 @@ class Admin::CompaniesController < Admin::BaseController
 
   # POST /admin/companies/discover
   def discover
-    category = params[:category].to_s
-    location = params[:location].to_s.strip
-    radius   = params[:radius].to_i.clamp(1_000, 50_000)
-
-    unless Company::CATEGORIES.include?(category)
-      return redirect_to admin_companies_path,
-                         alert: "Categoria non valida: #{category}"
-    end
+    location    = params[:location].to_s.strip
+    radius      = params[:radius].to_i.clamp(1_000, 50_000)
+    campaign_id = params[:campaign_id].presence
 
     if location.blank?
       return redirect_to admin_companies_path,
                          alert: "Inserisci una location (es: Prato, Italia)"
     end
 
-    DiscoveryJob.perform_later(
-      category: category,
-      location: location,
-      radius:   radius
-    )
+    if campaign_id.present?
+      # Modalità Campaign: query libera
+      campaign = Campaign.find_by(id: campaign_id)
+      return redirect_to admin_companies_path, alert: "Campagna non trovata." unless campaign
 
-    redirect_to admin_companies_path,
-                notice: "Discovery avviata per '#{category}' in '#{location}' (raggio #{radius / 1000} km). " \
-                        "I risultati appariranno entro qualche minuto."
+      DiscoveryJob.perform_later(
+        campaign_id: campaign.id,
+        location:    location,
+        radius:      radius
+      )
+
+      redirect_to admin_companies_path,
+                  notice: "Discovery avviata per campagna '#{campaign.name}' in '#{location}' (raggio #{radius / 1000} km)."
+    else
+      # Modalità classica: categoria fissa
+      category = params[:category].to_s
+
+      unless Company::CATEGORIES.include?(category)
+        return redirect_to admin_companies_path,
+                           alert: "Categoria non valida: #{category}"
+      end
+
+      DiscoveryJob.perform_later(
+        category: category,
+        location: location,
+        radius:   radius
+      )
+
+      redirect_to admin_companies_path,
+                  notice: "Discovery avviata per '#{category}' in '#{location}' (raggio #{radius / 1000} km). " \
+                          "I risultati appariranno entro qualche minuto."
+    end
   end
 
   # POST /admin/companies/:id/enrich
@@ -155,7 +173,8 @@ class Admin::CompaniesController < Admin::BaseController
                          alert: "Azienda non contattabile: opted-out, ha un sito web o email mancante."
     end
 
-    unless @company.demo&.deployed?
+    requires_demo = @company.campaign.nil? || @company.campaign.use_demo?
+    if requires_demo && !@company.demo&.deployed?
       return redirect_to admin_company_path(@company),
                          alert: "La demo HTML non è ancora stata buildata. Avvia prima il Build Demo."
     end

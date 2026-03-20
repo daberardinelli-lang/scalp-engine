@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <style>
+    body { margin: 0; padding: 0; background: #f4f5f7; font-family: -apple-system, "Helvetica Neue", Helvetica, Arial, sans-serif }
+    table { border-collapse: collapse }
+    img { border: 0; line-height: 100%; outline: none; text-decoration: none }
+    a { color: #0e7490 }
+    @media only screen and (max-width: 600px) {
+      .wrapper { width: 100% !important; padding: 16px !important }
+      .content-table { width: 100% !important }
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background:#f4f5f7">
+
+<table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+  <tr>
+    <td align="center" style="padding:32px 16px">
+
+      <table class="content-table" width="600" cellpadding="0" cellspacing="0" role="presentation"
+             style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.08)">
+
+        <!-- Header brand -->
+        <tr>
+          <td style="background:#164e63;padding:24px 40px">
+            <span style="color:#ffffff;font-size:20px;font-weight:700">{{ brand_name }}</span>
+            <div style="color:#67e8f9;font-size:12px;margin-top:2px;letter-spacing:0.04em;text-transform:uppercase">
+              {{ operator_profile }}
+            </div>
+          </td>
+        </tr>
+
+        <!-- Corpo -->
+        <tr>
+          <td style="padding:40px 40px 32px">
+
+            <p style="margin:0 0 20px;font-size:16px;color:#374151;line-height:1.6">
+              Gentile Dott./Dott.ssa,
+            </p>
+            <p style="margin:0 0 20px;font-size:16px;color:#374151;line-height:1.6">
+              sono un informatore scientifico del farmaco e ho selezionato il Suo studio
+              a <strong>{{ city }}</strong> per una proposta che ritengo possa essere di Suo interesse
+              nella pratica clinica quotidiana.
+            </p>
+            <p style="margin:0 0 28px;font-size:16px;color:#374151;line-height:1.6">
+              La contatto in questa sede per concordare un breve incontro, anche telefonico,
+              secondo i Suoi orari più comodi.
+            </p>
+
+            <!-- Box proposta -->
+            <table width="100%" cellpadding="0" cellspacing="0"
+                   style="background:#ecfeff;border:1px solid #a5f3fc;border-radius:10px;margin-bottom:28px">
+              <tr>
+                <td style="padding:24px 28px">
+                  <div style="font-size:12px;text-transform:uppercase;letter-spacing:0.06em;color:#0e7490;margin-bottom:8px;font-weight:600">
+                    Informazione scientifica — {{ operator_profile }}
+                  </div>
+                  <div style="font-size:18px;font-weight:700;color:#111827;line-height:1.3;margin-bottom:12px">
+                    {{ headline }}
+                  </div>
+                  <div style="font-size:14px;color:#374151;line-height:1.6">
+                    {{ about_excerpt }}...
+                  </div>
+                </td>
+              </tr>
+            </table>
+
+            <p style="margin:0 0 28px;font-size:15px;color:#374151;line-height:1.7">
+              Sono disponibile a passare presso il Suo studio o a inviarle materiale informativo.
+              Può rispondere a questa email o contattarmi direttamente a
+              <a href="mailto:{{ brand_email }}" style="color:#0e7490">{{ brand_email }}</a>.
+            </p>
+
+            <hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 28px">
+
+            <p style="margin:0 0 6px;font-size:15px;color:#374151">Cordiali saluti,</p>
+            <p style="margin:0;font-size:15px;font-weight:600;color:#111827">{{ brand_name }}</p>
+            <p style="margin:4px 0 0;font-size:14px;color:#6b7280">{{ operator_profile }}</p>
+            <p style="margin:2px 0 0;font-size:14px;color:#6b7280">
+              <a href="mailto:{{ brand_email }}" style="color:#0e7490">{{ brand_email }}</a>
+            </p>
+
+          </td>
+        </tr>
+
+        <!-- Footer GDPR -->
+        <tr>
+          <td style="background:#f9fafb;border-top:1px solid #e5e7eb;padding:20px 40px;text-align:center">
+            <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;line-height:1.6">
+              Hai ricevuto questa email perché il Suo studio risulta attivo a {{ city }} da fonti pubbliche.
+              Comunicazione a scopo professionale — D.Lgs. 219/2006.
+            </p>
+            <p style="margin:0;font-size:12px;color:#9ca3af">
+              Non vuole ricevere ulteriori comunicazioni?
+              <a href="{{ optout_url }}" style="color:#6b7280;text-decoration:underline">
+                Clicca qui per disiscriversi (opt-out GDPR)
+              </a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+
+<img src="{{ open_pixel_url }}" width="1" height="1" style="display:none;line-height:1px;font-size:1px" alt="">
+
+</body>
+</html>

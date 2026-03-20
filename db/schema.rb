@@ -10,12 +10,32 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_20_000002) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_20_100002) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
+  create_table "campaigns", force: :cascade do |t|
+    t.boolean "active", default: true, null: false
+    t.datetime "created_at", null: false
+    t.text "description"
+    t.string "discovery_query"
+    t.string "discovery_source", default: "google_places", null: false
+    t.string "email_body_template"
+    t.string "email_subject_template"
+    t.string "name", null: false
+    t.string "operator_profile"
+    t.string "target_profile"
+    t.datetime "updated_at", null: false
+    t.boolean "use_ai_content", default: true, null: false
+    t.boolean "use_demo", default: false, null: false
+    t.bigint "user_id"
+    t.index ["active"], name: "index_campaigns_on_active"
+    t.index ["user_id"], name: "index_campaigns_on_user_id"
+  end
+
   create_table "companies", force: :cascade do |t|
     t.string "address"
+    t.bigint "campaign_id"
     t.string "category", null: false
     t.string "city"
     t.datetime "created_at", null: false
@@ -38,6 +58,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_000002) do
     t.jsonb "reviews_data", default: []
     t.string "status", default: "discovered", null: false
     t.datetime "updated_at", null: false
+    t.index ["campaign_id"], name: "index_companies_on_campaign_id"
     t.index ["category"], name: "index_companies_on_category"
     t.index ["discarded_at"], name: "index_companies_on_discarded_at"
     t.index ["enriched_at"], name: "index_companies_on_enriched_at"
@@ -217,6 +238,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_000002) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "campaigns", "users"
+  add_foreign_key "companies", "campaigns"
   add_foreign_key "demos", "companies"
   add_foreign_key "email_events", "leads"
   add_foreign_key "leads", "companies"

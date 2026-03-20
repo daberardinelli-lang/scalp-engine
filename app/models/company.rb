@@ -1,6 +1,7 @@
 class Company < ApplicationRecord
   include Discard::Model
 
+  belongs_to :campaign, optional: true
   has_one  :demo,  dependent: :destroy
   has_many :leads, dependent: :destroy
 
@@ -18,14 +19,15 @@ class Company < ApplicationRecord
 
   EMAIL_STATUSES = %w[found manual skip unknown].freeze
 
-  validates :name,     presence: true
-  validates :category, inclusion: { in: CATEGORIES }
-  validates :status,   inclusion: { in: STATUSES }
+  validates :name,   presence: true
+  validates :status, inclusion: { in: STATUSES }
+  # category: opzionale quando la company viene da una Campaign con query libera
+  validates :category, inclusion: { in: CATEGORIES }, allow_blank: true
 
   scope :active,           -> { kept.where(opted_out_at: nil) }
   scope :without_website,  -> { where(has_website: false) }
   scope :with_email,       -> { where(email_status: %w[found manual]) }
-  scope :contactable,      -> { active.without_website.with_email.where(status: %w[enriched demo_built]) }
+  scope :contactable,      -> { active.without_website.with_email.where(status: %w[enriched demo_built contacted]) }
   scope :by_province,      ->(p)   { where(province: p) }
   scope :by_category,      ->(cat) { where(category: cat) }
 

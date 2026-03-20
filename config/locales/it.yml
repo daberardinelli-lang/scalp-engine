@@ -44,6 +44,9 @@ it:
 
   devise:
     sessions:
+      signed_in:  "Accesso effettuato con successo."
+      signed_out: "Disconnessione effettuata con successo."
+      already_signed_out: "Non sei autenticato."
       new:
         sign_in: "Accedi a WebRadar"
     failure:
