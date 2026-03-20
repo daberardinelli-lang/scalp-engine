@@ -1,0 +1,14 @@
+{
+  "name": "webradar",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild app/javascript/*.* --bundle --sourcemap --outdir=app/assets/builds --public-path=/assets"
+  },
+  "dependencies": {
+    "@hotwired/turbo-rails": "^8.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.20.2"
+  }
+}

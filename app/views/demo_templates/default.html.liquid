@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="description" content="{{ headline }} — {{ company_name }}, {{ city }}">
+  <title>{{ company_name }} — Sito Demo</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0 }
+    html { scroll-behavior: smooth; font-size: 16px }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #1a202c;
+      background: #f8f9fa;
+      line-height: 1.6;
+    }
+
+    /* ── Demo banner ───────────────────────────────────────────── */
+    .demo-banner {
+      background: #1a202c;
+      color: #fbbf24;
+      text-align: center;
+      padding: 9px 20px;
+      font-size: 13px;
+      letter-spacing: 0.02em;
+    }
+
+    /* ── Navigation ────────────────────────────────────────────── */
+    nav {
+      background: #fff;
+      border-bottom: 1px solid #e5e7eb;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 16px;
+    }
+    .nav-brand { font-size: 19px; font-weight: 700; color: #0f4c35; white-space: nowrap }
+    .nav-category { font-size: 12px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 2px }
+    .nav-cta {
+      background: #0f4c35;
+      color: #fff;
+      padding: 9px 22px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background 0.2s;
+    }
+    .nav-cta:hover { background: #0a3828 }
+
+    /* ── Layout helpers ─────────────────────────────────────────── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 0 24px }
+    .section { padding: 72px 0 }
+    .section-title {
+      text-align: center;
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #111827;
+    }
+    .section-sub {
+      text-align: center;
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 48px;
+    }
+
+    /* ── Hero ───────────────────────────────────────────────────── */
+    .hero {
+      background: linear-gradient(140deg, #0f4c35 0%, #1e7a53 60%, #0f4c35 100%);
+      color: #fff;
+      padding: 88px 24px 80px;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(26px, 5vw, 52px);
+      font-weight: 800;
+      line-height: 1.15;
+      margin-bottom: 20px;
+      max-width: 820px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero-meta { color: #a7f3d0; font-size: 17px; margin-bottom: 8px }
+    .hero-rating { margin-top: 18px; font-size: 14px; color: #a7f3d0 }
+    .hero-stars { color: #fbbf24; font-size: 20px; vertical-align: middle }
+    .hero-btn {
+      display: inline-block;
+      background: #fbbf24;
+      color: #1a202c;
+      padding: 16px 44px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      margin-top: 36px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .hero-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,0,0,.25) }
+
+    /* ── About ──────────────────────────────────────────────────── */
+    .about-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 56px;
+      align-items: center;
+    }
+    .about-text { font-size: 17px; color: #374151; line-height: 1.85 }
+    .about-image {
+      border-radius: 16px;
+      overflow: hidden;
+      aspect-ratio: 4/3;
+      box-shadow: 0 12px 40px rgba(0,0,0,.12);
+    }
+    .about-image img { width: 100%; height: 100%; object-fit: cover; display: block }
+    .about-single { max-width: 700px; margin: 0 auto; font-size: 17px; color: #374151; line-height: 1.85; text-align: center }
+
+    /* ── Services ───────────────────────────────────────────────── */
+    .services-section { background: #fff }
+    .services-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 20px;
+    }
+    .service-card {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 14px;
+      padding: 28px 20px;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .service-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(15,76,53,.12) }
+    .service-icon { font-size: 28px; margin-bottom: 12px }
+    .service-name { font-weight: 600; font-size: 15px; color: #065f46; line-height: 1.4 }
+
+    /* ── Gallery ────────────────────────────────────────────────── */
+    .gallery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .gallery-grid img {
+      width: 100%;
+      height: 220px;
+      object-fit: cover;
+      border-radius: 12px;
+      transition: transform 0.3s, box-shadow 0.3s;
+      display: block;
+    }
+    .gallery-grid img:hover { transform: scale(1.025); box-shadow: 0 8px 24px rgba(0,0,0,.15) }
+    .gallery-credit { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 16px }
+
+    /* ── Reviews ────────────────────────────────────────────────── */
+    .reviews-section { background: #fff }
+    .reviews-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .review-card {
+      background: #fafafa;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 22px;
+      position: relative;
+    }
+    .review-card::before {
+      content: '"';
+      position: absolute;
+      top: 12px;
+      left: 18px;
+      font-size: 64px;
+      color: #d1fae5;
+      line-height: 1;
+      font-family: Georgia, serif;
+    }
+    .review-stars { color: #f59e0b; font-size: 17px; margin-bottom: 10px }
+    .review-text { font-size: 15px; color: #374151; line-height: 1.65; margin-bottom: 14px; font-style: italic; padding-top: 8px }
+    .review-author { font-size: 13px; font-weight: 600; color: #6b7280 }
+
+    /* ── Contact ────────────────────────────────────────────────── */
+    .contact-box {
+      background: linear-gradient(140deg, #0f4c35, #1e7a53);
+      color: #fff;
+      border-radius: 20px;
+      padding: 56px 48px;
+      text-align: center;
+      max-width: 760px;
+      margin: 0 auto;
+      box-shadow: 0 16px 48px rgba(15,76,53,.25);
+    }
+    .contact-box h2 { font-size: 30px; font-weight: 700; margin-bottom: 12px }
+    .contact-box > p { color: #a7f3d0; font-size: 16px; margin-bottom: 40px }
+    .contact-info { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; margin-bottom: 36px }
+    .contact-item { text-align: center }
+    .contact-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: #6ee7b7; margin-bottom: 5px }
+    .contact-value { font-size: 17px; font-weight: 600 }
+    .contact-btn {
+      display: inline-block;
+      background: #fbbf24;
+      color: #1a202c;
+      padding: 15px 40px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+    .contact-btn:hover { transform: translateY(-2px) }
+
+    /* ── Footer ─────────────────────────────────────────────────── */
+    footer {
+      background: #111827;
+      color: #6b7280;
+      padding: 36px 24px;
+      text-align: center;
+      font-size: 13px;
+    }
+    .footer-badge {
+      display: inline-block;
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: #9ca3af;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      margin-bottom: 16px;
+      letter-spacing: 0.03em;
+    }
+    footer a { color: #9ca3af }
+    footer a:hover { color: #e5e7eb }
+    .footer-divider { margin: 0 8px; color: #374151 }
+
+    /* ── Responsive ─────────────────────────────────────────────── */
+    @media (max-width: 768px) {
+      .about-grid { grid-template-columns: 1fr }
+      .about-image { order: -1 }
+      .nav-cta { display: none }
+      .hero { padding: 60px 20px }
+      .hero h1 { font-size: 26px }
+      .contact-box { padding: 36px 24px }
+      .contact-info { gap: 20px }
+      .section { padding: 48px 0 }
+      .section-title { font-size: 24px }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Demo banner -->
+<div class="demo-banner">
+  ⚡ Questo è un <strong>sito demo</strong> creato da <strong>{{ brand_name }}</strong> — immagina come potrebbe essere la tua presenza online!
+</div>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-inner">
+    <div>
+      <div class="nav-brand">{{ company_name }}</div>
+      <div class="nav-category">{{ category_label }}</div>
+    </div>
+    <a href="#contatti" class="nav-cta">{{ cta_text }}</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <h1>{{ headline }}</h1>
+  <div class="hero-meta">{{ city }}{% if province != "" %}, {{ province }}{% endif %} · {{ category_label }}</div>
+  {% if rating_stars != "" %}
+  <div class="hero-rating">
+    <span class="hero-stars">{{ rating_stars }}</span>
+    &nbsp;<strong>{{ maps_rating }}/5</strong> su Google Maps ({{ maps_reviews_count }} recensioni)
+  </div>
+  {% endif %}
+  <a href="#contatti" class="hero-btn">{{ cta_text }}</a>
+</section>
+
+<!-- About -->
+<section class="section">
+  <div class="container">
+    {% if first_photo != "" %}
+    <div class="about-grid">
+      <div>
+        <h2 class="section-title" style="text-align:left;margin-bottom:20px">Chi siamo</h2>
+        <p class="about-text">{{ about }}</p>
+      </div>
+      <div class="about-image">
+        <img src="{{ first_photo }}" alt="{{ company_name }}" loading="eager">
+      </div>
+    </div>
+    {% else %}
+    <h2 class="section-title">Chi siamo</h2>
+    <p class="section-sub" style="margin-bottom:0"></p>
+    <p class="about-single">{{ about }}</p>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Services -->
+{% if services.size > 0 %}
+<section class="section services-section">
+  <div class="container">
+    <h2 class="section-title">I nostri servizi</h2>
+    <p class="section-sub">Tutto quello che offriamo per soddisfare le tue esigenze</p>
+    <div class="services-grid">
+      {% for service in services %}
+      <div class="service-card">
+        <div class="service-icon">✦</div>
+        <div class="service-name">{{ service }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Gallery -->
+{% if photos.size > 1 %}
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Galleria fotografica</h2>
+    <p class="section-sub">Immagini della nostra attività</p>
+    <div class="gallery-grid">
+      {% for photo in photos %}
+      <img src="{{ photo }}" alt="Foto {{ company_name }}" loading="lazy">
+      {% endfor %}
+    </div>
+    <p class="gallery-credit">Foto: Google Maps. Diritti riservati ai rispettivi autori.</p>
+  </div>
+</section>
+{% endif %}
+
+<!-- Reviews -->
+{% if reviews.size > 0 %}
+<section class="section reviews-section">
+  <div class="container">
+    <h2 class="section-title">Cosa dicono i clienti</h2>
+    <p class="section-sub">Opinioni verificate su Google Maps</p>
+    <div class="reviews-grid">
+      {% for review in reviews %}
+      <div class="review-card">
+        <div class="review-stars">{{ review.stars }}</div>
+        <p class="review-text">{{ review.text }}</p>
+        <div class="review-author">— {{ review.author }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- Contact -->
+<section class="section" id="contatti">
+  <div class="container">
+    <div class="contact-box">
+      <h2>{{ cta_text }}</h2>
+      <p>Siamo qui per aiutarti — contattaci oggi stesso!</p>
+      <div class="contact-info">
+        {% if phone != "" %}
+        <div class="contact-item">
+          <div class="contact-label">Telefono</div>
+          <div class="contact-value">{{ phone }}</div>
+        </div>
+        {% endif %}
+        <div class="contact-item">
+          <div class="contact-label">Dove siamo</div>
+          <div class="contact-value">{{ city }}{% if province != "" %}, {{ province }}{% endif %}</div>
+        </div>
+        {% if google_maps_url != "" %}
+        <div class="contact-item">
+          <div class="contact-label">Mappa</div>
+          <div class="contact-value">
+            <a href="{{ google_maps_url }}" target="_blank" rel="noopener" style="color:#6ee7b7">Apri su Maps ↗</a>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+      {% if phone != "" %}
+      <a href="tel:{{ phone_clean }}" class="contact-btn">📞 Chiama ora</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-badge">🌐 Sito demo — non ancora online</div>
+  <div style="margin-bottom:8px;color:#d1d5db;font-weight:600">{{ company_name }}</div>
+  <div style="margin-bottom:16px">
+    {{ city }}{% if province != "" %}, {{ province }}{% endif %}
+    {% if phone != "" %}
+    <span class="footer-divider">·</span> {{ phone }}
+    {% endif %}
+  </div>
+  <div style="margin-bottom:12px">
+    Demo generata il {{ generated_at }} da
+    <a href="mailto:{{ brand_email }}"><strong>{{ brand_name }}</strong></a>
+    per mostrarti il potenziale della tua presenza online.
+  </div>
+  <div>
+    <a href="mailto:{{ brand_email }}">Contatta {{ brand_name }}</a>
+    <span class="footer-divider">·</span>
+    <a href="{{ privacy_url }}" target="_blank" rel="noopener">Privacy Policy</a>
+    <span class="footer-divider">·</span>
+    <span>Dati e foto Google Maps © Google</span>
+    <span class="footer-divider">·</span>
+    <span>Noindex — uso dimostrativo</span>
+  </div>
+</footer>
+
+</body>
+</html>

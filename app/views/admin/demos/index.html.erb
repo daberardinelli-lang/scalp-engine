@@ -1,0 +1,128 @@
+<%# app/views/admin/demos/index.html.erb %>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Demo</h1>
+    <p class="text-sm text-gray-500 mt-1"><%= @total_count %> demo totali</p>
+  </div>
+</div>
+
+<%# Statistiche %>
+<div class="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-6">
+  <% [
+    ["Totali",    @stats[:total],    "bg-gray-50",    "text-gray-700"],
+    ["Deployate", @stats[:deployed], "bg-emerald-50", "text-emerald-700"],
+    ["Attive",    @stats[:active],   "bg-violet-50",  "text-violet-700"],
+    ["Scadute",   @stats[:expired],  "bg-red-50",     "text-red-600"],
+    ["Views tot.", @stats[:views],   "bg-amber-50",   "text-amber-700"]
+  ].each do |label, count, bg, text| %>
+    <div class="<%= bg %> border border-gray-200 rounded-lg p-3 text-center">
+      <div class="text-2xl font-bold <%= text %>"><%= count %></div>
+      <div class="text-xs text-gray-500 mt-0.5"><%= label %></div>
+    </div>
+  <% end %>
+</div>
+
+<%# Filtri %>
+<div class="bg-white border border-gray-200 rounded-lg p-3 mb-4">
+  <div class="flex gap-2 text-sm">
+    <%= link_to "Tutte", admin_demos_path,
+          class: "px-3 py-1.5 rounded-lg #{params[:filter].blank? ? 'bg-gray-900 text-white' : 'text-gray-600 hover:bg-gray-100'}" %>
+    <%= link_to "Deployate", admin_demos_path(filter: "deployed"),
+          class: "px-3 py-1.5 rounded-lg #{params[:filter] == 'deployed' ? 'bg-emerald-600 text-white' : 'text-gray-600 hover:bg-gray-100'}" %>
+    <%= link_to "Non deployate", admin_demos_path(filter: "not_deployed"),
+          class: "px-3 py-1.5 rounded-lg #{params[:filter] == 'not_deployed' ? 'bg-amber-600 text-white' : 'text-gray-600 hover:bg-gray-100'}" %>
+    <%= link_to "Scadute", admin_demos_path(filter: "expired"),
+          class: "px-3 py-1.5 rounded-lg #{params[:filter] == 'expired' ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-100'}" %>
+  </div>
+</div>
+
+<%# Tabella %>
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+  <% if @demos.any? %>
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-3 text-left">Azienda</th>
+          <th class="px-4 py-3 text-left">Subdomain</th>
+          <th class="px-4 py-3 text-left">Deployata</th>
+          <th class="px-4 py-3 text-left">Scade</th>
+          <th class="px-4 py-3 text-center">Views</th>
+          <th class="px-4 py-3 text-left">Stato</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @demos.each do |demo| %>
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-4 py-3">
+              <div class="font-medium text-gray-900"><%= demo.company.name %></div>
+              <div class="text-xs text-gray-400"><%= demo.company.city %></div>
+            </td>
+            <td class="px-4 py-3 font-mono text-xs text-gray-600">
+              <%= demo.subdomain %>
+            </td>
+            <td class="px-4 py-3 text-xs text-gray-500">
+              <%= demo.deployed_at&.strftime("%d/%m/%Y %H:%M") || "—" %>
+            </td>
+            <td class="px-4 py-3 text-xs">
+              <% if demo.expires_at.present? %>
+                <span class="<%= demo.expired? ? 'text-red-600 font-medium' : 'text-gray-500' %>">
+                  <%= demo.expires_at.strftime("%d/%m/%Y") %>
+                </span>
+              <% else %>
+                <span class="text-gray-300">—</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-center font-semibold text-gray-700">
+              <%= demo.view_count || 0 %>
+            </td>
+            <td class="px-4 py-3">
+              <% if demo.active? %>
+                <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700">Attiva</span>
+              <% elsif demo.expired? %>
+                <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600">Scaduta</span>
+              <% elsif demo.deployed? %>
+                <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700">Deployata</span>
+              <% else %>
+                <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500">Non deployata</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-right flex items-center justify-end gap-2">
+              <% if demo.deployed? %>
+                <%= link_to "Preview", demo_preview_path(demo.subdomain),
+                      target: "_blank", rel: "noopener",
+                      class: "text-xs text-emerald-600 hover:text-emerald-800 font-medium" %>
+              <% end %>
+              <%= link_to "Dettaglio →", admin_demo_path(demo),
+                    class: "text-emerald-600 hover:text-emerald-800 font-medium" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <%# Paginazione %>
+    <% if @total_pages > 1 %>
+      <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
+        <span>Pagina <%= @current_page %> di <%= @total_pages %></span>
+        <div class="flex gap-2">
+          <% if @current_page > 1 %>
+            <%= link_to "← Precedente", admin_demos_path(page: @current_page - 1, filter: params[:filter]),
+                  class: "px-3 py-1 border border-gray-300 rounded hover:bg-gray-50" %>
+          <% end %>
+          <% if @current_page < @total_pages %>
+            <%= link_to "Successiva →", admin_demos_path(page: @current_page + 1, filter: params[:filter]),
+                  class: "px-3 py-1 border border-gray-300 rounded hover:bg-gray-50" %>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  <% else %>
+    <div class="text-center py-16 text-gray-400">
+      <div class="text-4xl mb-3">🌐</div>
+      <p class="font-medium">Nessuna demo</p>
+      <p class="text-sm mt-1">Genera i contenuti AI e builda le demo dalla sezione Aziende.</p>
+    </div>
+  <% end %>
+</div>

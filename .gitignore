@@ -1,0 +1,42 @@
+# Secrets e configurazione locale
+.env
+.env.local
+config/master.key
+config/credentials/*.key
+
+# Build assets (generati automaticamente)
+/app/assets/builds/*
+!/app/assets/builds/.keep
+
+# Node
+/node_modules/
+
+# Ruby / Bundler
+/.bundle
+/vendor/bundle
+
+# Rails temp files
+/tmp/
+/log/*.log
+!/log/.keep
+/storage/*
+!/storage/.keep
+!/storage/demos/.keep
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+/nul
+
+# Test coverage
+/coverage/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Claude
+.claude/
