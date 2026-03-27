@@ -1,0 +1,86 @@
+it:
+  webradar:
+    categories:
+      restaurant:  "Ristorante"
+      bar:         "Bar / Caffè"
+      pizzeria:    "Pizzeria"
+      plumber:     "Idraulico"
+      electrician: "Elettricista"
+      builder:     "Muratore / Edile"
+      retail:      "Negozio / Retail"
+      shop:        "Negozio"
+      lawyer:      "Studio Legale"
+      accountant:  "Commercialista"
+      notary:      "Notaio"
+      other:       "Altro"
+
+    statuses:
+      discovered:  "Scoperta"
+      enriched:    "Arricchita"
+      demo_built:  "Demo pronta"
+      contacted:   "Contattata"
+      replied:     "Ha risposto"
+      converted:   "Convertita"
+      opted_out:   "Opt-out"
+
+    email_statuses:
+      found:    "Email trovata"
+      manual:   "Da trovare manuale"
+      skip:     "Salta"
+      unknown:  "Sconosciuto"
+
+    outcomes:
+      pending:          "In attesa"
+      interested:       "Interessata"
+      not_interested:   "Non interessata"
+      converted:        "Convertita"
+      opted_out:        "Opt-out"
+
+  support:
+    array:
+      words_connector: ", "
+      two_words_connector: " e "
+      last_word_connector: " e "
+
+  devise:
+    sessions:
+      signed_in:  "Accesso effettuato con successo."
+      signed_out: "Disconnessione effettuata con successo."
+      already_signed_out: "Non sei autenticato."
+      new:
+        sign_in: "Accedi a WebRadar"
+    failure:
+      already_authenticated:        "Sei già autenticato."
+      inactive:                     "Account non attivo."
+      invalid:                      "Email o password non validi."
+      locked:                       "Account bloccato."
+      not_found_in_database:        "Email o password non validi."
+      timeout:                      "Sessione scaduta, effettua di nuovo il login."
+      unauthenticated:              "Devi effettuare il login per continuare."
+      unconfirmed:                  "Devi confermare l'account prima di continuare."
+    registrations:
+      signed_up:                    "Registrazione avvenuta con successo."
+      signed_up_but_inactive:       "Registrato ma account non ancora attivo."
+      updated:                      "Account aggiornato con successo."
+      destroyed:                    "Account eliminato con successo."
+    passwords:
+      send_instructions:            "Istruzioni per il reset password inviate via email."
+      updated:                      "Password aggiornata con successo."
+      updated_not_active:           "Password aggiornata, account non ancora attivo."
+      send_paranoid_instructions:   "Se l'email esiste, riceverai le istruzioni a breve."
+      no_token:                     "Questo link non è più valido."
+    confirmations:
+      send_instructions:            "Email di conferma inviata."
+      send_paranoid_instructions:   "Se l'email esiste, riceverai la conferma a breve."
+      confirmed:                    "Account confermato con successo."
+    unlocks:
+      send_instructions:            "Istruzioni per sbloccare l'account inviate via email."
+      send_paranoid_instructions:   "Se l'account esiste, riceverai le istruzioni a breve."
+      unlocked:                     "Account sbloccato con successo."
+    mailer:
+      confirmation_instructions:
+        subject:                    "Conferma il tuo account"
+      reset_password_instructions:
+        subject:                    "Istruzioni per il reset password"
+      unlock_instructions:
+        subject:                    "Istruzioni per sbloccare l'account"

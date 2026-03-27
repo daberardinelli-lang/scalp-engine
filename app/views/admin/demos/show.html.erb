@@ -1,0 +1,164 @@
+<%# app/views/admin/demos/show.html.erb %>
+
+<div class="mb-6">
+  <%= link_to "← Tutte le demo", admin_demos_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <%# Colonna principale — contenuti AI %>
+  <div class="lg:col-span-2 space-y-6">
+
+    <%# Header %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h1 class="text-xl font-bold text-gray-900"><%= @company.name %></h1>
+          <p class="text-sm text-gray-500"><%= @company.full_address %></p>
+          <code class="text-xs text-violet-600 mt-1 block"><%= @demo.subdomain %>.demo.webradar.it</code>
+        </div>
+        <div class="flex-shrink-0 flex flex-col items-end gap-2">
+          <% if @demo.active? %>
+            <span class="px-2 py-0.5 rounded-full text-xs bg-emerald-100 text-emerald-700 font-medium">Attiva</span>
+          <% elsif @demo.expired? %>
+            <span class="px-2 py-0.5 rounded-full text-xs bg-red-100 text-red-600 font-medium">Scaduta</span>
+          <% elsif @demo.deployed? %>
+            <span class="px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-700 font-medium">Deployata</span>
+          <% else %>
+            <span class="px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-500 font-medium">Non deployata</span>
+          <% end %>
+          <% if @demo.deployed? %>
+            <%= link_to "🔗 Apri demo →", "/demos/#{@demo.subdomain}",
+                  target: "_blank", rel: "noopener",
+                  class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Contenuti AI generati %>
+    <% if @demo.content_generated? %>
+      <div class="bg-white border border-violet-200 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Contenuti AI</h2>
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Headline</div>
+            <p class="text-gray-900 font-bold text-lg"><%= @demo.generated_headline %></p>
+          </div>
+          <div>
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">About</div>
+            <p class="text-gray-700 text-sm leading-relaxed"><%= @demo.generated_about %></p>
+          </div>
+          <% services = @demo.services_list %>
+          <% if services.any? %>
+            <div>
+              <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Servizi</div>
+              <div class="flex flex-wrap gap-2">
+                <% services.each do |s| %>
+                  <span class="bg-violet-50 text-violet-700 text-xs px-2 py-1 rounded-full border border-violet-200"><%= s %></span>
+                <% end %>
+              </div>
+            </div>
+          <% end %>
+          <div>
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">CTA</div>
+            <span class="inline-block bg-violet-600 text-white text-sm font-semibold px-4 py-2 rounded-lg">
+              <%= @demo.generated_cta %>
+            </span>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+
+  <%# Sidebar destra %>
+  <div class="space-y-6">
+
+    <%# Statistiche demo %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Statistiche</h2>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Visualizzazioni</dt>
+          <dd class="font-bold text-lg text-gray-900"><%= @demo.view_count || 0 %></dd>
+        </div>
+        <% if @demo.last_viewed_at.present? %>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Ultima visita</dt>
+            <dd class="text-xs"><%= @demo.last_viewed_at.strftime("%d/%m/%Y %H:%M") %></dd>
+          </div>
+        <% end %>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Deploy</dt>
+          <dd class="text-xs"><%= @demo.deployed_at&.strftime("%d/%m/%Y") || "—" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Scade il</dt>
+          <dd class="text-xs <%= @demo.expired? ? 'text-red-600 font-medium' : '' %>">
+            <%= @demo.expires_at&.strftime("%d/%m/%Y") || "—" %>
+          </dd>
+        </div>
+        <% if @demo.html_path.present? %>
+          <div>
+            <dt class="text-gray-500 text-xs">Path HTML</dt>
+            <dd class="text-xs text-gray-400 mt-1 font-mono break-all"><%= @demo.html_path %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+
+    <%# Azienda collegata %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Azienda</h2>
+      <dl class="space-y-2 text-sm">
+        <div>
+          <dt class="text-xs text-gray-400">Nome</dt>
+          <dd class="font-medium"><%= @company.name %></dd>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-400">Categoria</dt>
+          <dd><%= @company.category.humanize %></dd>
+        </div>
+        <div>
+          <dt class="text-xs text-gray-400">Rating</dt>
+          <dd class="text-amber-500 font-semibold">★ <%= @company.maps_rating %></dd>
+        </div>
+      </dl>
+      <div class="mt-4">
+        <%= link_to "Scheda azienda →", admin_company_path(@company),
+              class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
+      </div>
+    </div>
+
+    <%# Lead collegato %>
+    <% if @lead %>
+      <div class="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Lead</h2>
+        <dl class="space-y-2 text-sm">
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Inviata</dt>
+            <dd><%= @lead.email_sent_at&.strftime("%d/%m/%Y") || "—" %></dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Aperta</dt>
+            <dd class="<%= @lead.opened? ? 'text-amber-600 font-medium' : 'text-gray-300' %>">
+              <%= @lead.opened? ? "Sì" : "No" %>
+            </dd>
+          </div>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Click</dt>
+            <dd class="<%= @lead.clicked? ? 'text-emerald-600 font-medium' : 'text-gray-300' %>">
+              <%= @lead.clicked? ? "Sì" : "No" %>
+            </dd>
+          </div>
+        </dl>
+        <div class="mt-3">
+          <%= link_to "Dettaglio lead →", admin_lead_path(@lead),
+                class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+</div>

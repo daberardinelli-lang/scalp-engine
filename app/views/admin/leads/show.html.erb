@@ -1,0 +1,150 @@
+<%# app/views/admin/leads/show.html.erb %>
+
+<div class="mb-6">
+  <%= link_to "← Tutti i lead", admin_leads_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <%# Colonna principale %>
+  <div class="lg:col-span-2 space-y-6">
+
+    <%# Info azienda %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-start justify-between gap-4 mb-4">
+        <div>
+          <h1 class="text-xl font-bold text-gray-900"><%= @company.name %></h1>
+          <p class="text-sm text-gray-500"><%= @company.full_address %></p>
+          <p class="text-sm text-gray-600 mt-1">
+            📧 <a href="mailto:<%= @company.email %>" class="text-indigo-600 hover:underline"><%= @company.email %></a>
+          </p>
+        </div>
+        <%= status_badge(@company.status) %>
+      </div>
+      <%= link_to "Vai alla scheda azienda →", admin_company_path(@company),
+            class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
+    </div>
+
+    <%# Timeline eventi email %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Timeline eventi</h2>
+      <% if @events.any? %>
+        <ol class="relative border-l border-gray-200 space-y-4 ml-3">
+          <% @events.each do |event| %>
+            <li class="ml-4">
+              <div class="absolute w-2.5 h-2.5 rounded-full mt-1 -left-1.5
+                <%= event.event_type == 'sent' ? 'bg-indigo-400' :
+                    event.event_type == 'opened' ? 'bg-amber-400' :
+                    event.event_type == 'clicked' ? 'bg-emerald-500' :
+                    event.event_type == 'opted_out' ? 'bg-red-400' : 'bg-gray-400' %>"></div>
+              <div class="flex items-baseline gap-3">
+                <span class="text-sm font-semibold text-gray-700 capitalize">
+                  <%= { "sent" => "📧 Email inviata", "opened" => "👁 Aperta",
+                        "clicked" => "🖱 Click su demo", "opted_out" => "🚫 Opt-out",
+                        "bounced" => "⚠️ Rimbalzata" }.fetch(event.event_type, event.event_type) %>
+                </span>
+                <span class="text-xs text-gray-400">
+                  <%= event.occurred_at.strftime("%d/%m/%Y alle %H:%M") %>
+                </span>
+              </div>
+              <% if event.metadata.present? && event.metadata["ip"].present? %>
+                <p class="text-xs text-gray-400 mt-0.5">IP: <%= event.metadata["ip"] %></p>
+              <% end %>
+            </li>
+          <% end %>
+        </ol>
+      <% else %>
+        <p class="text-sm text-gray-400 italic">Nessun evento registrato.</p>
+      <% end %>
+    </div>
+
+    <%# Anteprima email inviata %>
+    <% if @lead.email_body_snapshot.present? %>
+      <div class="bg-white border border-gray-200 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Email inviata</h2>
+          <span class="text-xs text-gray-400">Oggetto: <%= @lead.email_subject %></span>
+        </div>
+        <details>
+          <summary class="text-sm text-indigo-600 cursor-pointer hover:text-indigo-800">Visualizza HTML →</summary>
+          <div class="mt-4 border border-gray-200 rounded-lg overflow-hidden">
+            <iframe srcdoc="<%= h @lead.email_body_snapshot %>"
+                    class="w-full h-96" sandbox="allow-same-origin"></iframe>
+          </div>
+        </details>
+      </div>
+    <% end %>
+
+  </div>
+
+  <%# Sidebar destra %>
+  <div class="space-y-6">
+
+    <%# Stato lead %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Stato lead</h2>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Outcome</dt>
+          <dd>
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+              <%= @lead.outcome == 'converted' ? 'bg-emerald-100 text-emerald-700' :
+                  @lead.outcome == 'opted_out'  ? 'bg-red-100 text-red-600' :
+                  @lead.outcome == 'interested' ? 'bg-blue-100 text-blue-700' :
+                  'bg-gray-100 text-gray-600' %>">
+              <%= @lead.outcome %>
+            </span>
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Email inviata</dt>
+          <dd><%= @lead.email_sent_at&.strftime("%d/%m/%Y %H:%M") || "—" %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Aperta</dt>
+          <dd class="<%= @lead.opened? ? 'text-amber-600 font-medium' : 'text-gray-300' %>">
+            <%= @lead.opened? ? @lead.email_opened_at.strftime("%d/%m/%Y %H:%M") : "No" %>
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Click demo</dt>
+          <dd class="<%= @lead.clicked? ? 'text-emerald-600 font-medium' : 'text-gray-300' %>">
+            <%= @lead.clicked? ? @lead.link_clicked_at.strftime("%d/%m/%Y %H:%M") : "No" %>
+          </dd>
+        </div>
+        <% if @lead.replied_at.present? %>
+          <div class="flex justify-between">
+            <dt class="text-gray-500">Risposta</dt>
+            <dd class="text-blue-600 font-medium"><%= @lead.replied_at.strftime("%d/%m/%Y") %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+
+    <%# Demo associata %>
+    <% if @demo %>
+      <div class="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Demo</h2>
+        <dl class="space-y-2 text-sm">
+          <div>
+            <dt class="text-xs text-gray-400">Subdomain</dt>
+            <dd class="font-mono text-xs text-gray-700 mt-0.5"><%= @demo.subdomain %></dd>
+          </div>
+          <% if @demo.deployed? %>
+            <div>
+              <dt class="text-xs text-gray-400">Visualizzazioni</dt>
+              <dd class="font-semibold"><%= @demo.view_count || 0 %></dd>
+            </div>
+            <div class="pt-2">
+              <%= link_to "🔗 Apri demo →",
+                    "/demos/#{@demo.subdomain}",
+                    target: "_blank", rel: "noopener",
+                    class: "text-sm text-emerald-600 hover:text-emerald-800 font-medium" %>
+            </div>
+          <% end %>
+        </dl>
+      </div>
+    <% end %>
+
+  </div>
+</div>

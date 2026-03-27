@@ -1,0 +1,107 @@
+# config/deploy.yml — Kamal 2
+#
+# Prima del deploy:
+#   1. Sostituisci i placeholder (tuousername, 1.2.3.4, webradar.it)
+#   2. Crea i secret sul server:  kamal env push
+#   3. Prima esecuzione:          kamal setup
+#   4. Deploy successivi:         kamal deploy
+#
+# Variabili d'ambiente da impostare prima del deploy (in .env o con kamal env):
+#   DATABASE_URL, REDIS_URL, SECRET_KEY_BASE, GOOGLE_PLACES_API_KEY,
+#   ANTHROPIC_API_KEY, MAILGUN_API_KEY, MAILGUN_DOMAIN, MAILGUN_WEBHOOK_SECRET,
+#   MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY,
+#   APP_BASE_URL, OPTOUT_SECRET, POSTGRES_PASSWORD, KAMAL_REGISTRY_PASSWORD
+
+service: webradar
+image: tuousername/webradar        # ← sostituisci con il tuo Docker Hub username
+
+# ─── Server ────────────────────────────────────────────────────────────────
+servers:
+  web:
+    hosts:
+      - 1.2.3.4                    # ← IP del VPS
+    options:
+      restart: unless-stopped
+
+  worker:
+    hosts:
+      - 1.2.3.4
+    cmd: bundle exec rake solid_queue:start
+    options:
+      restart: unless-stopped
+
+# ─── Proxy (kamal-proxy sostituisce Traefik in Kamal 2) ────────────────────
+proxy:
+  ssl: true
+  host: app.webradar.it            # ← dominio principale dell'app Rails
+
+# ─── Container registry ────────────────────────────────────────────────────
+registry:
+  username: tuousername            # ← Docker Hub username
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# ─── Variabili d'ambiente ──────────────────────────────────────────────────
+env:
+  clear:
+    RAILS_ENV:                production
+    BRAND_NAME:               WebRadar
+    BRAND_EMAIL:              info@webradar.it
+    DEMO_BASE_DOMAIN:         demo.webradar.it
+    APP_BASE_URL:             https://app.webradar.it
+    DEMO_STORAGE_PATH:        /rails/storage/demos
+    RAILS_LOG_TO_STDOUT:      "true"
+    RAILS_SERVE_STATIC_FILES: "true"
+  secret:
+    - DATABASE_URL
+    - REDIS_URL
+    - SECRET_KEY_BASE
+    - RAILS_MASTER_KEY
+    - GOOGLE_PLACES_API_KEY
+    - ANTHROPIC_API_KEY
+    - MAILGUN_API_KEY
+    - MAILGUN_DOMAIN
+    - MAILGUN_WEBHOOK_SECRET
+    - MINIO_ENDPOINT
+    - MINIO_ACCESS_KEY
+    - MINIO_SECRET_KEY
+    - OPTOUT_SECRET
+
+# ─── Volumi persistenti ────────────────────────────────────────────────────
+volumes:
+  - storage:/rails/storage              # Active Storage (upload generici)
+  - demos_storage:/rails/storage/demos  # HTML demo generate
+
+# ─── Asset path ────────────────────────────────────────────────────────────
+asset_path: /rails/public/assets
+
+# ─── Builder ───────────────────────────────────────────────────────────────
+builder:
+  multiarch: false                  # true solo se build da ARM (Apple M*)
+
+# ─── Accessories (PostgreSQL + Redis sul VPS) ──────────────────────────────
+accessories:
+  postgres:
+    image: postgres:16-alpine
+    host: 1.2.3.4
+    port: "127.0.0.1:5432:5432"    # esposto solo su loopback
+    env:
+      clear:
+        POSTGRES_USER: webradar
+        POSTGRES_DB:   webradar_production
+      secret:
+        - POSTGRES_PASSWORD
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    host: 1.2.3.4
+    port: "127.0.0.1:6379:6379"    # esposto solo su loopback
+    volumes:
+      - redis_data:/data
+
+# ─── Health check ──────────────────────────────────────────────────────────
+healthcheck:
+  path: /up
+  port: 3000

@@ -1,0 +1,38 @@
+FROM ruby:3.3.4-slim
+
+RUN apt-get update -qq && apt-get install -y \
+  build-essential \
+  libpq-dev \
+  nodejs \
+  npm \
+  git \
+  curl \
+  # Chromium per Ferrum (scraping email Fase 2)
+  chromium \
+  chromium-driver \
+  && npm install -g yarn \
+  && rm -rf /var/lib/apt/lists/*
+
+# Ferrum cerca Chromium in queste path standard
+ENV FERRUM_PROCESS_TIMEOUT=30
+ENV BROWSER_PATH=/usr/bin/chromium
+
+WORKDIR /rails
+
+COPY .ruby-version Gemfile Gemfile.lock* ./
+RUN bundle install
+
+COPY package.json yarn.lock* ./
+RUN yarn install --frozen-lockfile 2>/dev/null || true
+
+COPY . .
+
+# Permessi eseguibili ai binstub
+RUN chmod +x bin/rails bin/rake bin/bundle bin/setup 2>/dev/null || true
+
+# Compila assets (esbuild JS + Tailwind CSS)
+RUN yarn build || true
+RUN SECRET_KEY_BASE=dummy bundle exec rails tailwindcss:build || true
+
+EXPOSE 3000
+CMD ["bash"]

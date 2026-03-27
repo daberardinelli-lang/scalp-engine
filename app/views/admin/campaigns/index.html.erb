@@ -1,0 +1,79 @@
+<%# app/views/admin/campaigns/index.html.erb %>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Campagne</h1>
+    <p class="text-sm text-gray-500 mt-1">
+      <%= @stats[:active] %> attive su <%= @stats[:total] %> totali &mdash;
+      <%= @stats[:companies_total] %> prospect associati
+    </p>
+  </div>
+  <%= link_to "＋ Nuova campagna", new_admin_campaign_path,
+        class: "bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition" %>
+</div>
+
+<% if @campaigns.empty? %>
+  <div class="bg-white border border-gray-200 rounded-lg p-12 text-center">
+    <div class="text-4xl mb-3">📡</div>
+    <p class="text-gray-500 font-medium">Nessuna campagna creata.</p>
+    <p class="text-sm text-gray-400 mt-1">
+      Crea una campagna per definire il tuo profilo operatore, il target e il template email.
+    </p>
+    <%= link_to "Crea la prima campagna →", new_admin_campaign_path,
+          class: "inline-block mt-4 text-emerald-600 hover:text-emerald-800 font-medium text-sm" %>
+  </div>
+<% else %>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <% @campaigns.each do |campaign| %>
+      <div class="bg-white border border-gray-200 rounded-lg p-5 flex flex-col gap-3 hover:shadow-sm transition">
+        <div class="flex items-start justify-between gap-2">
+          <div>
+            <%= link_to campaign.name, admin_campaign_path(campaign),
+                  class: "font-semibold text-gray-900 hover:text-emerald-700 text-base" %>
+            <% if campaign.description.present? %>
+              <p class="text-xs text-gray-400 mt-0.5 line-clamp-2"><%= campaign.description %></p>
+            <% end %>
+          </div>
+          <span class="shrink-0 text-xs font-medium px-2 py-0.5 rounded-full <%= campaign.active? ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500' %>">
+            <%= campaign.active? ? "Attiva" : "Inattiva" %>
+          </span>
+        </div>
+
+        <div class="text-xs text-gray-500 space-y-1">
+          <% if campaign.operator_profile.present? %>
+            <div><span class="font-medium text-gray-600">👤 Operatore:</span> <%= campaign.operator_profile %></div>
+          <% end %>
+          <% if campaign.target_profile.present? %>
+            <div><span class="font-medium text-gray-600">🎯 Target:</span> <%= campaign.target_profile %></div>
+          <% end %>
+          <div><span class="font-medium text-gray-600">🔍 Discovery:</span> <%= campaign.discovery_source_label %></div>
+          <% if campaign.discovery_query.present? %>
+            <div><span class="font-medium text-gray-600">🔎 Query:</span> <code class="bg-gray-100 px-1 rounded"><%= campaign.discovery_query %></code></div>
+          <% end %>
+        </div>
+
+        <div class="flex flex-wrap gap-1.5 text-xs">
+          <% if campaign.use_demo? %>
+            <span class="bg-violet-100 text-violet-700 px-2 py-0.5 rounded-full">🏗 Demo</span>
+          <% end %>
+          <% if campaign.use_ai_content? %>
+            <span class="bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">✦ AI content</span>
+          <% end %>
+          <% if campaign.email_body_template.present? %>
+            <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">📧 <%= campaign.email_body_template %></span>
+          <% end %>
+        </div>
+
+        <div class="flex gap-2 pt-1 border-t border-gray-100">
+          <%= link_to "Dettaglio", admin_campaign_path(campaign),
+                class: "text-xs text-emerald-600 hover:text-emerald-800 font-medium" %>
+          <%= link_to "Modifica", edit_admin_campaign_path(campaign),
+                class: "text-xs text-gray-500 hover:text-gray-700 font-medium" %>
+          <%= button_to campaign.active? ? "Disattiva" : "Attiva",
+                toggle_active_admin_campaign_path(campaign),
+                class: "text-xs #{campaign.active? ? 'text-red-500 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-800'} font-medium bg-transparent border-0 cursor-pointer p-0" %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+<% end %>

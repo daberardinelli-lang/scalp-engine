@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="it">
+  <head>
+    <title>WebRadar</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="csrf-token" content="<%= form_authenticity_token %>">
+    <%= stylesheet_link_tag "tailwind", "data-turbo-track": "reload" %>
+    <%= javascript_include_tag "application", "data-turbo-track": "reload", defer: true %>
+  </head>
+  <body class="bg-gray-50 text-gray-900 min-h-screen">
+
+    <% if user_signed_in? %>
+      <nav class="bg-white border-b border-gray-200 px-6 py-3 flex items-center justify-between">
+        <span class="font-bold text-lg tracking-tight text-emerald-600">WebRadar</span>
+        <div class="flex items-center gap-6 text-sm">
+          <%= link_to "Dashboard", root_path, class: "text-gray-600 hover:text-gray-900" %>
+          <span class="text-gray-400">|</span>
+          <%= link_to "Esci (#{current_user.email})", destroy_user_session_path,
+                data: { turbo_method: :delete },
+                class: "text-gray-500 hover:text-red-600" %>
+        </div>
+      </nav>
+    <% end %>
+
+    <% if notice %>
+      <div class="fixed top-4 right-4 z-50 bg-emerald-500 text-white px-4 py-2 rounded shadow text-sm">
+        <%= notice %>
+      </div>
+    <% end %>
+
+    <% if alert %>
+      <div class="fixed top-4 right-4 z-50 bg-red-500 text-white px-4 py-2 rounded shadow text-sm">
+        <%= alert %>
+      </div>
+    <% end %>
+
+    <main class="p-6">
+      <%= yield %>
+    </main>
+
+  </body>
+</html>

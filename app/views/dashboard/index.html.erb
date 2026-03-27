@@ -1,0 +1,133 @@
+<%# app/views/dashboard/index.html.erb %>
+
+<div class="mb-8">
+  <h1 class="text-2xl font-bold text-gray-900">Benvenuto in WebRadar</h1>
+  <p class="text-sm text-gray-500 mt-1">Scegli il modulo con cui vuoi lavorare oggi.</p>
+</div>
+
+<%# Due card principali %>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+
+  <%# Card Web Agency %>
+  <div class="bg-white border-2 border-emerald-200 rounded-2xl p-6 flex flex-col gap-5 hover:shadow-md transition">
+    <div class="flex items-start gap-4">
+      <div class="bg-emerald-100 rounded-xl p-3 text-2xl shrink-0">🌐</div>
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">Siti Web per PMI</h2>
+        <p class="text-sm text-gray-500 mt-1">
+          Trova attività locali senza sito web, genera una landing page demo personalizzata con AI
+          e invia una proposta email con il link alla demo.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3 text-center">
+      <div class="bg-gray-50 rounded-lg py-3">
+        <div class="text-2xl font-bold text-gray-800"><%= @web_agency[:total] %></div>
+        <div class="text-xs text-gray-500 mt-0.5">Aziende</div>
+      </div>
+      <div class="bg-amber-50 rounded-lg py-3">
+        <div class="text-2xl font-bold text-amber-700"><%= @web_agency[:demos] %></div>
+        <div class="text-xs text-gray-500 mt-0.5">Demo attive</div>
+      </div>
+      <div class="bg-emerald-50 rounded-lg py-3">
+        <div class="text-2xl font-bold text-emerald-700"><%= @web_agency[:converted] %></div>
+        <div class="text-xs text-gray-500 mt-0.5">Convertiti</div>
+      </div>
+    </div>
+
+    <% if @web_agency[:total] > 0 %>
+      <div class="text-xs text-gray-400 flex gap-4">
+        <span>📧 <strong class="text-gray-600"><%= @web_agency[:leads_sent] %></strong> email inviate</span>
+        <span>🤝 <strong class="text-gray-600"><%= @web_agency[:contacted] %></strong> contattate</span>
+      </div>
+    <% end %>
+
+    <%= link_to admin_companies_path(mode: "web_agency"),
+          class: "mt-auto inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-5 py-3 rounded-xl transition text-sm" do %>
+      Vai alle Aziende →
+    <% end %>
+  </div>
+
+  <%# Card Campagne Outreach %>
+  <div class="bg-white border-2 border-blue-200 rounded-2xl p-6 flex flex-col gap-5 hover:shadow-md transition">
+    <div class="flex items-start gap-4">
+      <div class="bg-blue-100 rounded-xl p-3 text-2xl shrink-0">📧</div>
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">Campagne Outreach</h2>
+        <p class="text-sm text-gray-500 mt-1">
+          Crea campagne personalizzate per qualsiasi tipo di prospect — medici, tabaccai, commercianti —
+          e invia proposte email su misura con template dedicati.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-3 gap-3 text-center">
+      <div class="bg-blue-50 rounded-lg py-3">
+        <div class="text-2xl font-bold text-blue-700"><%= @outreach[:campaigns] %></div>
+        <div class="text-xs text-gray-500 mt-0.5">Campagne</div>
+      </div>
+      <div class="bg-gray-50 rounded-lg py-3">
+        <div class="text-2xl font-bold text-gray-800"><%= @outreach[:prospects] %></div>
+        <div class="text-xs text-gray-500 mt-0.5">Prospect</div>
+      </div>
+      <div class="bg-emerald-50 rounded-lg py-3">
+        <div class="text-2xl font-bold text-emerald-700"><%= @outreach[:converted] %></div>
+        <div class="text-xs text-gray-500 mt-0.5">Convertiti</div>
+      </div>
+    </div>
+
+    <% if @outreach[:prospects] > 0 %>
+      <div class="text-xs text-gray-400 flex gap-4">
+        <span>📧 <strong class="text-gray-600"><%= @outreach[:leads_sent] %></strong> email inviate</span>
+        <span>🤝 <strong class="text-gray-600"><%= @outreach[:contacted] %></strong> contattati</span>
+      </div>
+    <% end %>
+
+    <%= link_to admin_campaigns_path,
+          class: "mt-auto inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-3 rounded-xl transition text-sm" do %>
+      Vai alle Campagne →
+    <% end %>
+  </div>
+
+</div>
+
+<%# Attività recente %>
+<% if @recent_leads.any? %>
+  <div class="bg-white border border-gray-200 rounded-xl overflow-hidden">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="font-semibold text-gray-800">Attività recente</h3>
+      <div class="flex gap-4 text-sm">
+        <%= link_to "Lead →", admin_leads_path, class: "text-emerald-600 hover:text-emerald-800 font-medium" %>
+        <%= link_to "Demo →", admin_demos_path, class: "text-emerald-600 hover:text-emerald-800 font-medium" %>
+      </div>
+    </div>
+    <ul class="divide-y divide-gray-100">
+      <% @recent_leads.each do |lead| %>
+        <li class="px-5 py-3 flex items-center justify-between gap-4 hover:bg-gray-50 transition">
+          <div class="flex items-center gap-3 min-w-0">
+            <div class="shrink-0 w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-sm font-medium text-gray-600">
+              <%= lead.company&.name&.first&.upcase || "?" %>
+            </div>
+            <div class="min-w-0">
+              <p class="font-medium text-gray-900 text-sm truncate"><%= lead.company&.name %></p>
+              <p class="text-xs text-gray-400"><%= lead.company&.city %><% if lead.company&.campaign %> · <span class="text-blue-500"><%= lead.company.campaign.name %></span><% end %></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 shrink-0 text-xs text-gray-400">
+            <% if lead.email_sent_at %>
+              <span title="Email inviata">📧 <%= lead.email_sent_at.strftime("%d/%m") %></span>
+            <% end %>
+            <% if lead.email_opened_at %>
+              <span title="Aperta" class="text-blue-500">👁 <%= lead.email_opened_at.strftime("%d/%m") %></span>
+            <% end %>
+            <% if lead.link_clicked_at %>
+              <span title="Click" class="text-emerald-500">🖱 <%= lead.link_clicked_at.strftime("%d/%m") %></span>
+            <% end %>
+            <%= link_to "→", admin_lead_path(lead), class: "text-emerald-600 hover:text-emerald-800 font-medium ml-1" %>
+          </div>
+        </li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

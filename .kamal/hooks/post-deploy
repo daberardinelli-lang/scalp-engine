@@ -1,0 +1,12 @@
+#!/bin/bash
+# .kamal/hooks/post-deploy
+#
+# Eseguito automaticamente da Kamal 2 dopo ogni deploy riuscito.
+# Lancia le migrazioni DB nel container web in esecuzione.
+
+set -e
+
+echo "▶ Post-deploy: esecuzione migrazioni database..."
+kamal app exec --reuse "bin/rails db:migrate"
+
+echo "✓ Post-deploy completato."

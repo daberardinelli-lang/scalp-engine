@@ -1,0 +1,133 @@
+<%# app/views/admin/campaigns/_form.html.erb %>
+
+<%= form_with model: [:admin, campaign], local: true, class: "space-y-6" do |f| %>
+  <% if campaign.errors.any? %>
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">
+      <ul class="list-disc list-inside space-y-1">
+        <% campaign.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%# Informazioni base %>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+    <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide">Informazioni base</h3>
+
+    <div>
+      <%= f.label :name, "Nome campagna *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :name, placeholder: "Es. Informatori farmaceutici — Lazio",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+    </div>
+
+    <div>
+      <%= f.label :description, "Descrizione", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_area :description, rows: 2, placeholder: "Note interne sulla campagna...",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+    </div>
+
+    <div>
+      <%= f.label :mode, "Modalità campagna *", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.select :mode,
+            [["📧 Outreach — invia proposte con template personalizzato", "outreach"],
+             ["🌐 Web Agency — trova PMI senza sito e proponi siti web", "web_agency"]],
+            { selected: campaign.mode.presence || "outreach" },
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+      <p class="text-xs text-gray-400 mt-1">
+        <strong>Outreach</strong>: cerca qualsiasi prospect (anche con sito web).
+        <strong>Web Agency</strong>: include solo attività senza sito web.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <%= f.label :operator_profile, "Profilo operatore", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :operator_profile, placeholder: "Es. Informatore farmaceutico Roche",
+              class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        <p class="text-xs text-gray-400 mt-1">Chi usa l'app e cosa vende</p>
+      </div>
+      <div>
+        <%= f.label :target_profile, "Profilo target", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :target_profile, placeholder: "Es. Medici di base provincia di Roma",
+              class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        <p class="text-xs text-gray-400 mt-1">Chi stai cercando</p>
+      </div>
+    </div>
+  </div>
+
+  <%# Discovery %>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+    <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide">Discovery</h3>
+
+    <div>
+      <%= f.label :discovery_source, "Fonte di ricerca", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.select :discovery_source,
+            Campaign::DISCOVERY_SOURCES.map { |s|
+              [{ "google_places" => "Google Places (Maps)", "pagine_gialle" => "Pagine Gialle", "web_scraping" => "Web Scraping" }[s] || s, s]
+            },
+            {},
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+    </div>
+
+    <div>
+      <%= f.label :discovery_query, "Query di ricerca", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :discovery_query, placeholder: "Es. medici di base, tabaccai, parrucchieri...",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+      <p class="text-xs text-gray-400 mt-1">
+        Termine di ricerca libero — viene concatenato alla location specificata al momento della discovery.
+        Lascia vuoto per usare il profilo target come query.
+      </p>
+    </div>
+  </div>
+
+  <%# Email & AI %>
+  <div class="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
+    <h3 class="font-semibold text-gray-800 text-sm uppercase tracking-wide">Email & AI</h3>
+
+    <div>
+      <%= f.label :email_body_template, "Template email", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.select :email_body_template,
+            [["web_agency — Proposta sito web (default)", "web_agency"],
+             ["commercial_rep — Rappresentante commerciale generico", "commercial_rep"],
+             ["pharma_rep — Settore sanitario / farmaceutico", "pharma_rep"]],
+            { include_blank: "— usa default (web_agency) —" },
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+    </div>
+
+    <div>
+      <%= f.label :email_subject_template, "Oggetto email (Liquid)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+      <%= f.text_field :email_subject_template,
+            placeholder: "Es. Proposta esclusiva per {{ company_name }} 🎯",
+            class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+      <p class="text-xs text-gray-400 mt-1">
+        Variabili disponibili: <code>{{ company_name }}</code>, <code>{{ city }}</code>,
+        <code>{{ operator_profile }}</code>. Lascia vuoto per usare il default.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="flex items-center gap-3">
+        <%= f.check_box :use_ai_content, class: "h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" %>
+        <div>
+          <%= f.label :use_ai_content, "Usa AI per personalizzare l'email", class: "text-sm font-medium text-gray-700" %>
+          <p class="text-xs text-gray-400">Claude genera headline, about e servizi personalizzati</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <%= f.check_box :use_demo, class: "h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" %>
+        <div>
+          <%= f.label :use_demo, "Genera landing page demo", class: "text-sm font-medium text-gray-700" %>
+          <p class="text-xs text-gray-400">Crea una mini-demo HTML per ogni prospect</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-3">
+    <%= f.submit campaign.new_record? ? "Crea campagna" : "Salva modifiche",
+          class: "bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-5 py-2 rounded-lg text-sm transition cursor-pointer" %>
+    <%= link_to "Annulla", admin_campaigns_path,
+          class: "text-sm text-gray-500 hover:text-gray-700" %>
+  </div>
+<% end %>

@@ -1,0 +1,19 @@
+local:
+  service: Disk
+  root: <%= Rails.root.join("storage") %>
+
+minio:
+  service: S3
+  endpoint: <%= ENV["MINIO_ENDPOINT"] %>
+  access_key_id: <%= ENV["MINIO_ACCESS_KEY"] %>
+  secret_access_key: <%= ENV["MINIO_SECRET_KEY"] %>
+  region: <%= ENV.fetch("MINIO_REGION", "us-east-1") %>
+  bucket: <%= ENV.fetch("MINIO_BUCKET", "webradar") %>
+  force_path_style: true
+
+amazon:
+  service: S3
+  access_key_id: <%= ENV["AWS_ACCESS_KEY_ID"] %>
+  secret_access_key: <%= ENV["AWS_SECRET_ACCESS_KEY"] %>
+  region: <%= ENV["AWS_REGION"] %>
+  bucket: <%= ENV["S3_BUCKET"] %>

@@ -1,0 +1,361 @@
+<%# app/views/admin/companies/show.html.erb %>
+
+<div class="mb-6">
+  <% if @company.campaign.present? %>
+    <%= link_to "← Campagne Outreach", admin_companies_path(mode: "outreach", campaign_id: @company.campaign_id), class: "text-sm text-gray-500 hover:text-gray-700" %>
+  <% else %>
+    <%= link_to "← Siti Web per PMI", admin_companies_path(mode: "web_agency"), class: "text-sm text-gray-500 hover:text-gray-700" %>
+  <% end %>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+  <%# Colonna principale %>
+  <div class="lg:col-span-2 space-y-6">
+
+    <%# Intestazione %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900"><%= @company.name %></h1>
+          <p class="text-gray-500 mt-1"><%= @company.full_address %></p>
+          <% if @company.phone.present? %>
+            <p class="text-gray-600 mt-1 text-sm"><%= @company.phone %></p>
+          <% end %>
+        </div>
+        <div class="flex-shrink-0"><%= status_badge(@company.status) %></div>
+      </div>
+
+      <% if @company.maps_rating.present? %>
+        <div class="mt-4 flex items-center gap-2 text-sm">
+          <span class="text-amber-500 font-semibold text-base">★ <%= @company.maps_rating %></span>
+          <span class="text-gray-400">(<%= @company.maps_reviews_count %> recensioni Google Maps)</span>
+        </div>
+      <% end %>
+
+      <% if @company.google_place_id.present? %>
+        <div class="mt-3">
+          <%= link_to "Apri su Google Maps →",
+                "https://www.google.com/maps/place/?q=place_id:#{@company.google_place_id}",
+                target: "_blank", rel: "noopener",
+                class: "text-sm text-emerald-600 hover:text-emerald-800" %>
+        </div>
+      <% end %>
+    </div>
+
+    <%# Foto %>
+    <% if @company.maps_photo_urls.any? %>
+      <div class="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Foto Google Maps</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <% @company.maps_photo_urls.each do |url| %>
+            <img src="<%= url %>" alt="Foto" class="w-full h-32 object-cover rounded-lg border border-gray-100" loading="lazy">
+          <% end %>
+        </div>
+        <p class="text-xs text-gray-400 mt-2">Fonte: Google Maps. Diritti riservati ai rispettivi autori.</p>
+      </div>
+    <% end %>
+
+    <%# Recensioni %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+        Recensioni Google Maps
+        <% if @company.reviews_data.present? %>
+          <span class="text-gray-400 font-normal normal-case">(<%=@company.reviews_data.size%>)</span>
+        <% end %>
+      </h2>
+      <% if @company.reviews_data.present? %>
+        <div class="space-y-4">
+          <% @company.reviews_data.first(5).each do |review| %>
+            <div class="border-l-2 border-amber-300 pl-3">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-amber-500 text-sm font-medium">
+                  <%= "★" * review["rating"].to_i %><%= "☆" * (5 - review["rating"].to_i) %>
+                </span>
+                <span class="text-xs text-gray-500"><%= review["author"] %></span>
+                <span class="text-xs text-gray-300"><%= review["date"] %></span>
+              </div>
+              <p class="text-sm text-gray-700"><%= review["text"] %></p>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-sm text-gray-400 italic">Nessuna recensione raccolta. Avvia l'arricchimento.</p>
+      <% end %>
+    </div>
+
+    <%# Contenuti demo generati da AI %>
+    <% if @company.demo&.content_generated? %>
+      <% demo = @company.demo %>
+      <div class="bg-white border border-violet-200 rounded-xl p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Contenuti AI generati</h2>
+          <span class="text-xs text-violet-600 bg-violet-50 px-2 py-1 rounded-full">demo_built</span>
+        </div>
+
+        <div class="space-y-4">
+          <div>
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Headline</div>
+            <p class="text-gray-900 font-semibold text-lg leading-tight"><%= demo.generated_headline %></p>
+          </div>
+
+          <div>
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">About</div>
+            <p class="text-gray-700 text-sm leading-relaxed"><%= demo.generated_about %></p>
+          </div>
+
+          <% services = demo.services_list %>
+          <% if services.any? %>
+            <div>
+              <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">Servizi</div>
+              <ul class="text-sm text-gray-700 space-y-1">
+                <% services.each do |service| %>
+                  <li class="flex items-start gap-2">
+                    <span class="text-violet-400 mt-0.5">•</span>
+                    <%= service %>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <div>
+            <div class="text-xs text-gray-400 uppercase tracking-wide mb-1">CTA</div>
+            <span class="inline-block bg-violet-600 text-white text-sm font-medium px-4 py-2 rounded-lg">
+              <%= demo.generated_cta %>
+            </span>
+          </div>
+
+          <div class="pt-2 border-t border-gray-100">
+            <div class="text-xs text-gray-400">Subdomain: <code class="text-gray-600"><%= demo.subdomain %></code></div>
+            <% if demo.expires_at.present? %>
+              <div class="text-xs text-gray-400 mt-1">Scade: <%= demo.expires_at.strftime("%d/%m/%Y") %></div>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    <% end %>
+
+    <%# Note %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Note</h2>
+      <% if @company.notes.present? %>
+        <p class="text-sm text-gray-700 whitespace-pre-wrap"><%= @company.notes %></p>
+      <% else %>
+        <p class="text-sm text-gray-400 italic">Nessuna nota.</p>
+      <% end %>
+    </div>
+
+  </div>
+
+  <%# Sidebar destra %>
+  <div class="space-y-6">
+
+    <%# Dati tecnici %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Dettagli</h2>
+      <dl class="space-y-3 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Categoria</dt>
+          <dd class="font-medium"><%= @company.category.humanize %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Telefono</dt>
+          <dd class="font-medium">
+            <% if @company.phone.present? %>
+              <span class="text-gray-700"><%= @company.phone %></span>
+            <% else %>
+              <span class="text-gray-400">Non trovato</span>
+            <% end %>
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Sito web</dt>
+          <dd class="font-medium <%= @company.has_website ? 'text-red-600' : 'text-emerald-600' %>">
+            <%= @company.has_website ? "Presente" : "Assente ✓" %>
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Email</dt>
+          <dd class="font-medium">
+            <% if @company.email.present? %>
+              <span class="text-emerald-600"><%= @company.email %></span>
+            <% else %>
+              <span class="text-gray-400">Non trovata</span>
+            <% end %>
+          </dd>
+        </div>
+        <% if @company.original_email.present? %>
+          <div class="flex justify-between items-center">
+            <dt class="text-gray-500">Email originale</dt>
+            <dd class="font-medium text-right">
+              <span class="text-amber-600 text-xs"><%= @company.original_email %></span>
+              <%= button_to "↩ Ripristina",
+                    restore_email_admin_company_path(@company),
+                    method: :patch,
+                    class: "ml-2 text-xs text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 px-2 py-0.5 rounded transition" %>
+            </dd>
+          </div>
+        <% end %>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Stato email</dt>
+          <dd><%= @company.email_status %></dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Place ID</dt>
+          <dd class="text-xs text-gray-400 truncate max-w-32" title="<%= @company.google_place_id %>">
+            <%= @company.google_place_id %>
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Scoperta il</dt>
+          <dd><%= @company.created_at.strftime("%d/%m/%Y %H:%M") %></dd>
+        </div>
+        <% if @company.opted_out_at.present? %>
+          <div class="flex justify-between text-red-600">
+            <dt>Opt-out</dt>
+            <dd><%= @company.opted_out_at.strftime("%d/%m/%Y") %></dd>
+          </div>
+        <% end %>
+      </dl>
+    </div>
+
+    <%# Modifica contatti %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Modifica contatti</h2>
+      <%= form_with model: @company, url: update_contact_admin_company_path(@company), method: :patch, local: true, class: "space-y-3" do |f| %>
+        <div>
+          <%= f.label :email, "Email", class: "block text-xs font-medium text-gray-600 mb-1" %>
+          <%= f.email_field :email,
+                placeholder: "es: info@bistrot.it",
+                class: "w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        </div>
+        <div>
+          <%= f.label :email_status, "Stato email", class: "block text-xs font-medium text-gray-600 mb-1" %>
+          <%= f.select :email_status,
+                [["found — trovata ✓", "found"], ["manual — inserita manuale", "manual"],
+                 ["skip — da saltare", "skip"], ["unknown — sconosciuta", "unknown"]],
+                {},
+                class: "w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        </div>
+        <div>
+          <%= f.label :notes, "Note", class: "block text-xs font-medium text-gray-600 mb-1" %>
+          <%= f.text_area :notes, rows: 2,
+                placeholder: "Note interne…",
+                class: "w-full border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 resize-none" %>
+        </div>
+        <%= f.submit "Salva", class: "w-full bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium px-4 py-1.5 rounded cursor-pointer transition" %>
+      <% end %>
+    </div>
+
+    <%# Azioni pipeline %>
+    <%# Determina se la demo è richiesta per questa azienda/campagna %>
+    <% requires_demo = @company.campaign.nil? || @company.campaign.use_demo? %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Azioni pipeline</h2>
+      <% if @company.campaign.present? %>
+        <div class="mb-3 text-xs text-blue-600 bg-blue-50 rounded-lg px-3 py-2">
+          📡 Campagna: <strong><%= @company.campaign.name %></strong>
+        </div>
+      <% end %>
+      <div class="space-y-2">
+
+        <%# Arricchimento (solo se discovered) %>
+        <% if @company.status == "discovered" %>
+          <%= button_to "⟳ Arricchisci ora",
+                enrich_admin_company_path(@company),
+                class: "w-full text-left bg-blue-50 hover:bg-blue-100 text-blue-700 text-sm font-medium px-4 py-2 rounded-lg transition" %>
+        <% end %>
+
+        <%# Generazione contenuti AI — solo se la campagna richiede demo (o no campagna = Web Agency) %>
+        <% if requires_demo && %w[enriched demo_built].include?(@company.status) %>
+          <%= button_to "✦ Genera contenuti AI",
+                generate_content_admin_company_path(@company),
+                class: "w-full text-left bg-violet-50 hover:bg-violet-100 text-violet-700 text-sm font-medium px-4 py-2 rounded-lg transition" %>
+        <% end %>
+
+        <%# Build Demo HTML — solo se la demo è richiesta e i contenuti AI sono pronti %>
+        <% if requires_demo && @company.demo&.content_generated? %>
+          <%= button_to "🏗 Build HTML demo",
+                build_demo_admin_company_path(@company),
+                class: "w-full text-left bg-amber-50 hover:bg-amber-100 text-amber-700 text-sm font-medium px-4 py-2 rounded-lg transition" %>
+        <% end %>
+
+        <%# Preview demo (se già deployata) %>
+        <% if @company.demo&.deployed? %>
+          <%= link_to "🔗 Anteprima demo →",
+                "/demos/#{@company.demo.subdomain}",
+                target: "_blank", rel: "noopener",
+                class: "block w-full text-left bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-medium px-4 py-2 rounded-lg transition" %>
+        <% end %>
+
+        <%# Invia email outreach:
+            - Outreach senza demo (use_demo=false): basta che sia contactable + enriched+
+            - Web Agency / use_demo=true: richiede anche demo deployata %>
+        <% email_ready = @company.contactable? && (
+             !requires_demo && %w[enriched contacted replied].include?(@company.status) ||
+             requires_demo && @company.demo&.deployed?
+           ) %>
+        <% if email_ready %>
+          <%= button_to "📧 Invia email outreach",
+                send_email_admin_company_path(@company),
+                class: "w-full text-left bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-sm font-medium px-4 py-2 rounded-lg transition",
+                data: { turbo_confirm: "Inviare l'email a #{@company.email}?" } %>
+        <% end %>
+
+        <% if @company.status == "contacted" %>
+          <%= button_to "Contrassegna: ha risposto",
+                mark_replied_admin_company_path(@company),
+                class: "w-full text-left bg-orange-50 hover:bg-orange-100 text-orange-700 text-sm font-medium px-4 py-2 rounded-lg transition" %>
+        <% end %>
+        <% if %w[contacted replied].include?(@company.status) %>
+          <%= button_to "Contrassegna: convertita ✓",
+                mark_converted_admin_company_path(@company),
+                class: "w-full text-left bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-sm font-medium px-4 py-2 rounded-lg transition",
+                data: { turbo_confirm: "Sei sicuro di voler segnare questa azienda come cliente convertito?" } %>
+        <% end %>
+
+        <% if @company.enriched_at.present? %>
+          <p class="text-xs text-gray-400 pt-1">
+            Arricchita: <%= @company.enriched_at.strftime("%d/%m/%Y %H:%M") %>
+          </p>
+        <% end %>
+
+        <% if @company.demo&.deployed_at.present? %>
+          <p class="text-xs text-gray-400 pt-1">
+            Demo deployata: <%= @company.demo.deployed_at.strftime("%d/%m/%Y %H:%M") %>
+          </p>
+        <% end %>
+
+      </div>
+    </div>
+
+    <%# Lead collegati %>
+    <% if @company.leads.any? %>
+      <div class="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+          Lead (<%= @company.leads.count %>)
+        </h2>
+        <div class="space-y-3">
+          <% @company.leads.order(created_at: :desc).each do |lead| %>
+            <div class="text-sm border-l-2 border-gray-200 pl-3">
+              <div class="font-medium text-gray-700"><%= lead.outcome.humanize %></div>
+              <% if lead.email_sent_at.present? %>
+                <div class="text-gray-400 text-xs">
+                  Inviata: <%= lead.email_sent_at.strftime("%d/%m/%Y") %>
+                </div>
+              <% end %>
+              <% if lead.email_opened_at.present? %>
+                <div class="text-emerald-500 text-xs">Aperta ✓</div>
+              <% end %>
+              <% if lead.link_clicked_at.present? %>
+                <div class="text-emerald-600 text-xs font-medium">Click sul link ✓</div>
+              <% end %>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+
+  </div>
+</div>
