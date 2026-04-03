@@ -1,12 +1,13 @@
 # app/services/discovery/strategies/pagine_gialle_strategy.rb
 #
 # Cerca l'email di un'azienda su PagineGialle.it (no browser — solo HTTP + Nokogiri).
-# PagineGialle mostra spesso email nelle schede aziendali pubbliche.
 #
-# Strategia:
-#   1. Cerca "{nome} {città}" su paginagialle.it
-#   2. Apre la prima scheda corrispondente
-#   3. Estrae email da link mailto: o pattern nel testo
+# Strategia (2 tentativi):
+#   1. Ricerca cosa/dove: "{nome}/{città}" — formato strutturato PG, match migliore
+#   2. Ricerca libera: "{nome} {città}" — fallback se la prima non trova
+#   3. Verifica nome: il risultato deve corrispondere all'azienda cercata
+#   4. Verifica indirizzo: se disponibile, confronta anche via/indirizzo
+#   5. Estrae email dalla scheda dettaglio
 #
 # Restituisce: { email: "...", source: "paginegialle" } oppure nil
 
@@ -16,7 +17,6 @@ module Discovery
       BASE_URL    = "https://www.paginegialle.it"
       EMAIL_REGEX = /\b[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}\b/
 
-      # Domini email generici da escludere (appartengono a directory, non all'azienda)
       EXCLUDED_DOMAINS = %w[
         paginegialle.it pagineinterne.it paginebianche.it
         spaziofoto.it infobel.com google.com facebook.com
@@ -33,8 +33,11 @@ module Discovery
       end
 
       def call
-        search_url  = build_search_url
-        detail_url  = find_first_listing_url(search_url)
+        # Tentativo 1: ricerca strutturata cosa/dove (più precisa)
+        detail_url = search_cosa_dove
+        # Tentativo 2: ricerca libera nome+città
+        detail_url ||= search_libera
+
         return nil if detail_url.nil?
 
         email = extract_email_from_page(detail_url)
@@ -49,48 +52,94 @@ module Discovery
 
       private
 
-      # ─── Ricerca ───────────────────────────────────────────────────────────
+      # ─── Ricerca cosa/dove ─────────────────────────────────────────────────
 
-      def build_search_url
-        query = CGI.escape("#{@company.name} #{@company.city}")
-        "#{BASE_URL}/ricerca/#{query}"
+      def search_cosa_dove
+        return nil if @company.city.blank?
+
+        cosa = CGI.escape(@company.name)
+        dove = CGI.escape(@company.city)
+        url = "#{BASE_URL}/ricerca/#{cosa}/#{dove}"
+
+        find_matching_listing(url)
       end
 
-      def find_first_listing_url(search_url)
+      # ─── Ricerca libera ────────────────────────────────────────────────────
+
+      def search_libera
+        query = CGI.escape("#{@company.name} #{@company.city}")
+        url = "#{BASE_URL}/ricerca/#{query}"
+
+        find_matching_listing(url)
+      end
+
+      # ─── Trova il risultato corrispondente ─────────────────────────────────
+
+      def find_matching_listing(search_url)
         html = fetch_html(search_url)
         return nil if html.nil?
 
         doc = Nokogiri::HTML(html)
-
-        # PagineGialle struttura 2024+: div.search-itm contiene le schede aziendali
-        # Il link alla scheda è un <a> con href verso paginegialle.it/{slug}
-        #
-        # IMPORTANTE: prendiamo SOLO risultati il cui nome corrisponde all'azienda cercata.
-        # Nessun fallback al primo risultato — meglio nessuna email che un'email sbagliata.
         company_words = significant_words(@company.name)
 
         doc.css("div.search-itm").each do |itm|
-          link = itm.css("a[href]").find do |a|
-            href = a["href"].to_s
-            href.match?(%r{paginegialle\.it/[a-z]}) &&
-              !href.include?("/ricerca/") &&
-              !href.include?("/magazine") &&
-              !href.include?("/categori")
-          end
+          link = extract_detail_link(itm)
           next if link.nil?
 
-          # Verifica match nome: almeno 2 parole significative in comune,
-          # oppure 1 parola se è lunga (>=6 chars, probabilmente un cognome/nome unico)
           itm_name = itm.css("h2").text.to_s.strip.downcase
-          matching_words = company_words.count { |w| itm_name.include?(w) }
-          long_match = company_words.any? { |w| w.length >= 6 && itm_name.include?(w) }
-          next unless matching_words >= 2 || long_match
+          itm_address = itm.css(".search-itm__adr, [class*='adr']").text.to_s.strip.downcase
 
-          href = link["href"].to_s
-          return href.start_with?("http") ? href : "#{BASE_URL}#{href}"
+          # Match per nome: score basato su quante parole significative corrispondono
+          name_score = company_words.count { |w| itm_name.include?(w) }
+          long_match = company_words.any? { |w| w.length >= 6 && itm_name.include?(w) }
+
+          # Match per indirizzo: se abbiamo l'indirizzo, verifichiamo anche quello
+          address_match = false
+          if @company.address.present?
+            addr_words = significant_words(@company.address)
+            address_match = addr_words.any? { |w| w.length >= 4 && itm_address.include?(w) }
+          end
+
+          # Match per telefono nel testo del risultato
+          phone_match = false
+          if @company.phone.present?
+            clean_phone = @company.phone.gsub(/\s+/, "").last(6)
+            itm_text = itm.text.gsub(/\s+/, "")
+            phone_match = clean_phone.length >= 6 && itm_text.include?(clean_phone)
+          end
+
+          # Accetta il risultato se:
+          # - Telefono corrisponde (match più affidabile)
+          # - Nome ha 2+ parole significative in comune
+          # - Nome ha 1 parola lunga (>=6) + indirizzo corrisponde
+          # - Nome ha 1 parola lunga (>=6) e poche parole significative totali
+          accepted = phone_match ||
+                     name_score >= 2 ||
+                     (long_match && address_match) ||
+                     (long_match && company_words.length <= 2)
+
+          if accepted
+            Rails.logger.debug "[PagineGialleStrategy] Match: '#{itm_name[0..50]}' " \
+                               "(name_score=#{name_score} long=#{long_match} addr=#{address_match} phone=#{phone_match})"
+            return link
+          end
         end
 
         nil
+      end
+
+      def extract_detail_link(itm)
+        link = itm.css("a[href]").find do |a|
+          href = a["href"].to_s
+          href.match?(%r{paginegialle\.it/[a-z]}) &&
+            !href.include?("/ricerca/") &&
+            !href.include?("/magazine") &&
+            !href.include?("/categori")
+        end
+        return nil if link.nil?
+
+        href = link["href"].to_s
+        href.start_with?("http") ? href : "#{BASE_URL}#{href}"
       end
 
       # ─── Estrazione email ──────────────────────────────────────────────────
@@ -101,17 +150,15 @@ module Discovery
 
         doc = Nokogiri::HTML(html)
 
-        # 1. Cerca link mailto: che contengano email dell'azienda (non "segnala ad amico")
+        # 1. Cerca mailto: (salta quelli di condivisione con subject=)
         doc.css("a[href^='mailto:']").each do |mailto|
           href = mailto["href"].to_s
-          # Salta i mailto di condivisione PagineGialle (contengono subject= nel link)
           next if href.include?("subject=")
           email = href.sub(/\Amailto:/i, "").split("?").first.strip
           return email if valid_email?(email)
         end
 
-        # 2. Cerca pattern email nel testo visibile dell'intera pagina
-        # PagineGialle mostra l'email in vari contenitori non predicibili
+        # 2. Cerca email nel testo della pagina
         all_emails = doc.text.scan(EMAIL_REGEX).uniq
         all_emails.each do |email|
           return email if valid_email?(email)
@@ -138,13 +185,12 @@ module Discovery
           f.options.open_timeout = 8
           f.request :retry, max: 2, interval: 2.0,
                     exceptions: [Faraday::TimeoutError, Faraday::ConnectionFailed]
-          f.response :follow_redirects rescue nil  # segui redirect (302)
+          f.response :follow_redirects rescue nil
         end
       end
 
       # ─── Match nome ────────────────────────────────────────────────────────
 
-      # Stop-words italiane comuni nei nomi aziendali — non significative per il match
       STOP_WORDS = %w[
         del della delle dei degli di da in con per tra fra alla alle
         studio studi associato associati dott dottssa dottore dottoressa prof
@@ -155,10 +201,12 @@ module Discovery
         pesce carne pizza pasta gelato forno panificio pasticceria
         medico medici dentista avvocato notaio commercialista
         roma milano napoli torino firenze bologna palermo genova
+        rieti terni perugia viterbo latina frosinone
+        agriturismo locanda villa masseria cascina
       ].freeze
 
       def significant_words(name)
-        name.downcase
+        name.to_s.downcase
             .gsub(/[^a-zàèéìòù\s]/, " ")
             .split(/\s+/)
             .select { |w| w.length > 3 }
