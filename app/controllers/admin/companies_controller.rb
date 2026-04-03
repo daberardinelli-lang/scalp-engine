@@ -18,6 +18,7 @@ class Admin::CompaniesController < Admin::BaseController
   end
 
   def show
+    @google_results = fetch_google_results(@company)
   end
 
   # POST /admin/companies/discover
@@ -404,6 +405,49 @@ class Admin::CompaniesController < Admin::BaseController
 
     q = "%#{params[:q]}%"
     scope.where("name ILIKE ? OR city ILIKE ? OR province ILIKE ?", q, q, q)
+  end
+
+  # ─── Google results per scheda company ─────────────────────────────────
+
+  def fetch_google_results(company)
+    query = "#{company.name} #{company.city} contatti email"
+    encoded = CGI.escape(query)
+    url = "https://html.duckduckgo.com/html/?q=#{encoded}"
+
+    client = Faraday.new do |f|
+      f.headers["User-Agent"] = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36"
+      f.options.timeout = 8
+      f.options.open_timeout = 5
+    end
+
+    response = client.get(url)
+    return [] unless response.status == 200
+
+    doc = Nokogiri::HTML(response.body)
+
+    doc.css("div.result").first(5).filter_map do |result|
+      title_el = result.css("a.result__a").first
+      snippet_el = result.css(".result__snippet").first
+      next unless title_el
+
+      href = title_el["href"].to_s
+      # DuckDuckGo wrappa i link — estraiamo l'URL reale
+      if href.include?("uddg=")
+        real_url = CGI.parse(URI.parse(href).query.to_s)["uddg"]&.first
+        href = real_url if real_url.present?
+      end
+
+      next unless href.start_with?("http")
+
+      {
+        title:   title_el.text.to_s.strip,
+        url:     href,
+        snippet: snippet_el&.text.to_s.strip
+      }
+    end
+  rescue => e
+    Rails.logger.debug "[CompaniesController] Google results error: #{e.message}"
+    []
   end
 
   SORTABLE_COLUMNS = %w[name city maps_rating maps_reviews_count created_at status].freeze

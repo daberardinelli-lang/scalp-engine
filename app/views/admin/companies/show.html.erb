@@ -92,6 +92,38 @@
       <% end %>
     </div>
 
+    <%# Risultati Google — per ricerca manuale email/info %>
+    <div class="bg-white border border-gray-200 rounded-xl p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+        Cerca sul web
+      </h2>
+      <% if @google_results.present? %>
+        <div class="space-y-3">
+          <% @google_results.each_with_index do |result, i| %>
+            <div class="border-l-2 border-blue-300 pl-3">
+              <div class="flex items-start gap-2">
+                <span class="text-xs text-gray-400 font-mono mt-0.5"><%= i + 1 %>.</span>
+                <div class="min-w-0">
+                  <%= link_to result[:url], result[:url], target: "_blank", rel: "noopener",
+                        class: "text-sm font-medium text-blue-600 hover:text-blue-800 break-all" %>
+                  <p class="text-sm text-gray-900 font-medium mt-0.5"><%= result[:title] %></p>
+                  <p class="text-xs text-gray-500 mt-0.5 line-clamp-2"><%= result[:snippet] %></p>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      <% else %>
+        <p class="text-sm text-gray-400 italic">Nessun risultato trovato.</p>
+      <% end %>
+      <div class="mt-3 pt-3 border-t border-gray-100">
+        <%= link_to "Cerca su Google →",
+              "https://www.google.com/search?q=#{CGI.escape("#{@company.name} #{@company.city} contatti email")}",
+              target: "_blank", rel: "noopener",
+              class: "text-xs text-blue-600 hover:text-blue-800" %>
+      </div>
+    </div>
+
     <%# Contenuti demo generati da AI %>
     <% if @company.demo&.content_generated? %>
       <% demo = @company.demo %>
