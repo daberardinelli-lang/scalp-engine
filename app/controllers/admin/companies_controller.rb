@@ -125,11 +125,12 @@ class Admin::CompaniesController < Admin::BaseController
     wb.add_worksheet(name: "Aziende") do |sheet|
       sheet.add_row [
         "Nome", "Categoria", "Città", "Provincia", "Indirizzo", "Telefono",
-        "Email", "Email Source", "Stato", "Rating", "N. Recensioni",
+        "Email", "Email Source", "Link WhatsApp", "Stato", "Rating", "N. Recensioni",
         "Ha sito web", "Campagna", "Data scoperta"
       ], style: header_style
 
       companies.find_each do |c|
+        wa_url = c.phone.present? ? helpers.whatsapp_url_for(c) : ""
         sheet.add_row [
           c.name,
           c.category,
@@ -139,6 +140,7 @@ class Admin::CompaniesController < Admin::BaseController
           c.phone,
           c.email,
           c.email_source,
+          wa_url,
           c.status,
           c.maps_rating,
           c.maps_reviews_count,
@@ -149,7 +151,7 @@ class Admin::CompaniesController < Admin::BaseController
       end
 
       # Auto-larghezza colonne
-      sheet.column_widths 35, 15, 15, 8, 25, 18, 30, 14, 12, 8, 12, 10, 20, 16
+      sheet.column_widths 35, 15, 15, 8, 25, 18, 30, 14, 12, 8, 12, 10, 20, 16, 16
     end
 
     send_data package.to_stream.read,
@@ -331,6 +333,7 @@ class Admin::CompaniesController < Admin::BaseController
                   .then { |q| filter_by_category(q) }
                   .then { |q| filter_by_campaign(q) }
                   .then { |q| filter_by_search(q) }
+                  .then { |q| filter_by_email(q) }
 
     @total_count = base.count
     @current_page = [params[:page].to_i, 1].max
@@ -401,5 +404,13 @@ class Admin::CompaniesController < Admin::BaseController
 
     q = "%#{params[:q]}%"
     scope.where("name ILIKE ? OR city ILIKE ? OR province ILIKE ?", q, q, q)
+  end
+
+  def filter_by_email(scope)
+    case params[:email_filter]
+    when "found"   then scope.where.not(email: [nil, ""])
+    when "missing" then scope.where(email: [nil, ""])
+    else scope
+    end
   end
 end

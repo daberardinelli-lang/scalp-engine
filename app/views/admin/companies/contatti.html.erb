@@ -82,8 +82,15 @@
               class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" %>
       </div>
     <% end %>
+    <div>
+      <%= f.label :email_filter, "Email", class: "block text-xs font-medium text-gray-600 mb-1" %>
+      <%= f.select :email_filter,
+            [["Tutte", ""], ["Con email", "found"], ["Senza email", "missing"]],
+            { selected: params[:email_filter] },
+            class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" %>
+    </div>
     <%= f.submit "Filtra", class: "bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium px-4 py-1.5 rounded cursor-pointer" %>
-    <% if params[:q].present? || params[:status].present? || params[:campaign_id].present? %>
+    <% if params[:q].present? || params[:status].present? || params[:campaign_id].present? || params[:email_filter].present? %>
       <%= link_to "Reset", admin_contatti_path, class: "text-sm text-gray-500 hover:text-gray-700 py-1.5" %>
     <% end %>
   <% end %>
@@ -100,6 +107,7 @@
           <th class="px-4 py-3 text-left">Citta</th>
           <th class="px-4 py-3 text-left">Telefono</th>
           <th class="px-4 py-3 text-left">Email</th>
+          <th class="px-4 py-3 text-center">WA</th>
           <th class="px-4 py-3 text-left">Stato</th>
           <th class="px-4 py-3 text-left">Scoperto il</th>
           <th class="px-4 py-3"></th>
@@ -130,6 +138,16 @@
                 <span class="text-emerald-600 text-xs font-medium"><%= company.email %></span>
               <% else %>
                 <span class="text-gray-300 text-xs">-</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-center">
+              <% if company.phone.present? %>
+                <%= link_to whatsapp_url_for(company), target: "_blank", rel: "noopener",
+                      title: "Invia WhatsApp", class: "inline-flex text-green-500 hover:text-green-600" do %>
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.625.846 5.059 2.284 7.034L.789 23.492a.5.5 0 00.611.611l4.458-1.495A11.94 11.94 0 0012 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-2.34 0-4.508-.654-6.363-1.787l-.446-.272-2.636.884.884-2.636-.272-.446A9.958 9.958 0 012 12C2 6.486 6.486 2 12 2s10 4.486 10 10-4.486 10-10 10z"/></svg>
+                <% end %>
+              <% else %>
+                <span class="text-gray-300">-</span>
               <% end %>
             </td>
             <td class="px-4 py-3"><%= status_badge(company.status) %></td>

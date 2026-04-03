@@ -17,6 +17,28 @@ module ApplicationHelper
     end
   end
 
+  # Genera URL wa.me con messaggio precompilato per una Company
+  def whatsapp_url_for(company, custom_message: nil)
+    return "#" if company.phone.blank?
+
+    # Normalizza il numero: rimuovi spazi, trattini, parentesi
+    phone = company.phone.gsub(/[\s\-\(\)]+/, "")
+    # Aggiungi prefisso italiano se manca
+    phone = "39#{phone}" unless phone.start_with?("39") || phone.start_with?("+39")
+    phone = phone.delete("+")
+
+    message = custom_message || whatsapp_default_message(company)
+    "https://wa.me/#{phone}?text=#{CGI.escape(message)}"
+  end
+
+  def whatsapp_default_message(company)
+    brand = ENV.fetch("BRAND_NAME", "WebRadar")
+    "Buongiorno, sono #{brand}.\n" \
+    "Ho visto la vostra attivita \"#{company.name}\" su Google Maps " \
+    "e avrei una proposta che potrebbe interessarvi.\n" \
+    "Posso inviarvi i dettagli?"
+  end
+
   # Badge colorato per lo status pipeline di un'azienda
   def status_badge(status)
     colors = {
