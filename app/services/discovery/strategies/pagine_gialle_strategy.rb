@@ -64,6 +64,11 @@ module Discovery
 
         # PagineGialle struttura 2024+: div.search-itm contiene le schede aziendali
         # Il link alla scheda è un <a> con href verso paginegialle.it/{slug}
+        #
+        # IMPORTANTE: prendiamo SOLO risultati il cui nome corrisponde all'azienda cercata.
+        # Nessun fallback al primo risultato — meglio nessuna email che un'email sbagliata.
+        company_words = significant_words(@company.name)
+
         doc.css("div.search-itm").each do |itm|
           link = itm.css("a[href]").find do |a|
             href = a["href"].to_s
@@ -74,29 +79,18 @@ module Discovery
           end
           next if link.nil?
 
-          # Verifica che il nome azienda nel risultato corrisponda ragionevolmente
+          # Verifica match nome: almeno 2 parole significative in comune,
+          # oppure 1 parola se è lunga (>=6 chars, probabilmente un cognome/nome unico)
           itm_name = itm.css("h2").text.to_s.strip.downcase
-          company_words = @company.name.downcase.split(/\s+/).select { |w| w.length > 3 }
-          # Almeno una parola significativa del nome deve essere presente
-          match = company_words.empty? || company_words.any? { |w| itm_name.include?(w) }
-          next unless match
+          matching_words = company_words.count { |w| itm_name.include?(w) }
+          long_match = company_words.any? { |w| w.length >= 6 && itm_name.include?(w) }
+          next unless matching_words >= 2 || long_match
 
           href = link["href"].to_s
           return href.start_with?("http") ? href : "#{BASE_URL}#{href}"
         end
 
-        # Fallback: primo risultato search-itm se presente
-        first_itm = doc.css("div.search-itm a[href]").find do |a|
-          href = a["href"].to_s
-          href.match?(%r{paginegialle\.it/[a-z]}) &&
-            !href.include?("/ricerca/") &&
-            !href.include?("/magazine") &&
-            !href.include?("/categori")
-        end
-        return nil if first_itm.nil?
-
-        href = first_itm["href"].to_s
-        href.start_with?("http") ? href : "#{BASE_URL}#{href}"
+        nil
       end
 
       # ─── Estrazione email ──────────────────────────────────────────────────
@@ -146,6 +140,30 @@ module Discovery
                     exceptions: [Faraday::TimeoutError, Faraday::ConnectionFailed]
           f.response :follow_redirects rescue nil  # segui redirect (302)
         end
+      end
+
+      # ─── Match nome ────────────────────────────────────────────────────────
+
+      # Stop-words italiane comuni nei nomi aziendali — non significative per il match
+      STOP_WORDS = %w[
+        del della delle dei degli di da in con per tra fra alla alle
+        studio studi associato associati dott dottssa dottore dottoressa prof
+        srl sas snc spa srls consulenza consulente consulenti lavoro
+        societa azienda impresa centro gruppo servizi servizio
+        ristorante trattoria osteria pizzeria taverna albergo hotel
+        negozio bottega laboratorio officina farmacia bar caffe
+        pesce carne pizza pasta gelato forno panificio pasticceria
+        medico medici dentista avvocato notaio commercialista
+        roma milano napoli torino firenze bologna palermo genova
+      ].freeze
+
+      def significant_words(name)
+        name.downcase
+            .gsub(/[^a-zàèéìòù\s]/, " ")
+            .split(/\s+/)
+            .select { |w| w.length > 3 }
+            .reject { |w| STOP_WORDS.include?(w) }
+            .uniq
       end
 
       # ─── Validazione ──────────────────────────────────────────────────────
