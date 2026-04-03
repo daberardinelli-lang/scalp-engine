@@ -2,9 +2,9 @@
 
 <div class="mb-6">
   <% if @company.campaign.present? %>
-    <%= link_to "← Campagne Outreach", admin_companies_path(mode: "outreach", campaign_id: @company.campaign_id), class: "text-sm text-gray-500 hover:text-gray-700" %>
+    <%= link_to "← Contatti", admin_contatti_path(campaign_id: @company.campaign_id), class: "text-sm text-gray-500 hover:text-gray-700" %>
   <% else %>
-    <%= link_to "← Siti Web per PMI", admin_companies_path(mode: "web_agency"), class: "text-sm text-gray-500 hover:text-gray-700" %>
+    <%= link_to "← Software Agency", admin_software_agency_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
   <% end %>
 </div>
 

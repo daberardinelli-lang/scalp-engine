@@ -27,7 +27,7 @@ class Admin::CompaniesController < Admin::BaseController
     campaign_id = params[:campaign_id].presence
 
     if location.blank?
-      return redirect_to admin_companies_path,
+      return redirect_to list_path_for_mode,
                          alert: "Inserisci una location (es: Prato, Italia)"
     end
 
@@ -86,16 +86,16 @@ class Admin::CompaniesController < Admin::BaseController
     count = Company.kept.where(status: "discovered").count
 
     if count.zero?
-      return redirect_to admin_companies_path,
+      return redirect_to list_path_for_mode,
                          alert: "Nessuna azienda in stato 'discovered' da arricchire."
     end
 
     enrich_mode = params[:enrich_mode].presence || "full"
 
-    EnrichmentJob.perform_later(enrich_mode: enrich_mode)   # senza company_id → batch
+    EnrichmentJob.perform_later(enrich_mode: enrich_mode)
 
     label = enrich_mode == "email_only" ? "solo email" : "email + recensioni"
-    redirect_to admin_companies_path,
+    redirect_to list_path_for_mode,
                 notice: "Batch enrichment (#{label}) avviato per #{count} aziende. I risultati appariranno progressivamente."
   end
 
@@ -175,13 +175,13 @@ class Admin::CompaniesController < Admin::BaseController
     count = Company.kept.where(status: "enriched").where(opted_out_at: nil).count
 
     if count.zero?
-      return redirect_to admin_companies_path,
+      return redirect_to list_path_for_mode,
                          alert: "Nessuna azienda in stato 'enriched' da processare."
     end
 
     ContentGenerationJob.perform_later   # senza company_id → batch
 
-    redirect_to admin_companies_path,
+    redirect_to list_path_for_mode,
                 notice: "Generazione batch AI avviata per #{count} aziende. I risultati appariranno progressivamente."
   end
 
@@ -210,13 +210,13 @@ class Admin::CompaniesController < Admin::BaseController
                    .count
 
     if count.zero?
-      return redirect_to admin_companies_path,
+      return redirect_to list_path_for_mode,
                          alert: "Nessuna azienda con contenuti AI pronti da buildare."
     end
 
     DemoBuildJob.perform_later   # senza company_id → batch
 
-    redirect_to admin_companies_path,
+    redirect_to list_path_for_mode,
                 notice: "Build batch demo avviato per #{count} aziende."
   end
 
@@ -249,7 +249,7 @@ class Admin::CompaniesController < Admin::BaseController
     count = scope.count
 
     if count.zero?
-      return redirect_to admin_companies_path,
+      return redirect_to list_path_for_mode,
                          alert: "Nessuna azienda pronta per l'invio (demo deployata + email trovata + non opted-out)."
     end
 
@@ -257,7 +257,7 @@ class Admin::CompaniesController < Admin::BaseController
       OutreachEmailJob.perform_later(company_id: company.id)
     end
 
-    redirect_to admin_companies_path,
+    redirect_to list_path_for_mode,
                 notice: "Email batch accodata per #{count} aziende."
   end
 
@@ -349,6 +349,14 @@ class Admin::CompaniesController < Admin::BaseController
       replied:     mode_base.where(status: "replied").count,
       converted:   mode_base.where(status: "converted").count
     }
+  end
+
+  def list_path_for_mode
+    case params[:mode].presence || @mode
+    when "outreach"   then admin_contatti_path
+    when "web_agency" then admin_software_agency_path
+    else admin_contatti_path
+    end
   end
 
   def set_company
