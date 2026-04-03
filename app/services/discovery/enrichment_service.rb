@@ -28,10 +28,14 @@ module Discovery
       new(...).call
     end
 
-    def initialize(company:,
+    # enrich_mode:
+    #   "full"       — recensioni + email (default)
+    #   "email_only" — solo ricerca email, skip recensioni (più veloce)
+    def initialize(company:, enrich_mode: "full",
                    review_fetcher:  Discovery::ReviewFetcherService,
                    email_extractor: Discovery::EmailExtractorService)
       @company         = company
+      @enrich_mode     = enrich_mode
       @review_fetcher  = review_fetcher
       @email_extractor = email_extractor
       @errors          = []
@@ -40,9 +44,9 @@ module Discovery
     def call
       validate_company!
 
-      Rails.logger.info "[EnrichmentService] START company_id=#{@company.id} name=#{@company.name}"
+      Rails.logger.info "[EnrichmentService] START company_id=#{@company.id} name=#{@company.name} mode=#{@enrich_mode}"
 
-      reviews_count = fetch_reviews
+      reviews_count = @enrich_mode == "email_only" ? 0 : fetch_reviews
       email_found   = extract_email
 
       finalize_enrichment

@@ -1,0 +1,230 @@
+<%# app/views/admin/companies/software_agency.html.erb — Sezione SOFTWARE AGENCY (demo siti) %>
+
+<div class="flex items-center justify-between mb-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+      Software Agency
+      <span class="text-sm font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">Demo Siti</span>
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">
+      Trova PMI senza sito web, crea demo personalizzate con AI e proponile via email.
+    </p>
+  </div>
+
+  <div class="flex gap-2 flex-wrap">
+    <%= button_to batch_enrich_admin_companies_path(enrich_mode: "full"),
+          class: "bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
+          data: { turbo_confirm: "Avviare arricchimento (email + recensioni) su tutte le aziende discovered?" } do %>
+      <span class="flex items-center gap-1">&#8635; Arricchisci tutte</span>
+    <% end %>
+
+    <%= button_to batch_generate_admin_companies_path,
+          class: "bg-violet-600 hover:bg-violet-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
+          data: { turbo_confirm: "Avviare la generazione AI su tutte le aziende enriched?" } do %>
+      <span class="flex items-center gap-1">&#10022; Genera AI (batch)</span>
+    <% end %>
+
+    <%= button_to batch_build_admin_companies_path,
+          class: "bg-amber-600 hover:bg-amber-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
+          data: { turbo_confirm: "Avviare il build HTML per tutte le demo con contenuti AI pronti?" } do %>
+      <span class="flex items-center gap-1">&#127959; Build demos</span>
+    <% end %>
+
+    <%= button_to batch_email_admin_companies_path,
+          class: "bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition",
+          data: { turbo_confirm: "Inviare le email con demo a tutte le aziende contattabili?" } do %>
+      <span class="flex items-center gap-1">&#128231; Invia email (batch)</span>
+    <% end %>
+
+    <%= link_to admin_software_agency_export_path(
+          status: params[:status], category: params[:category], q: params[:q]
+        ), class: "inline-flex items-center gap-1 bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition" do %>
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Esporta Excel
+    <% end %>
+
+    <button onclick="document.getElementById('discover-modal').classList.remove('hidden')"
+      class="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition">
+      &#43; Cerca PMI
+    </button>
+  </div>
+</div>
+
+<%# Statistiche pipeline completa %>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+  <% [
+    ["Trovate",      @stats[:discovered], "bg-gray-50",    "text-gray-700",   "discovered"],
+    ["Arricchite",   @stats[:enriched],   "bg-blue-50",    "text-blue-700",   "enriched"],
+    ["Demo pronte",  @stats[:demo_built], "bg-purple-50",  "text-purple-700", "demo_built"],
+    ["Contattate",   @stats[:contacted],  "bg-yellow-50",  "text-yellow-700", "contacted"],
+    ["Hanno risposto",@stats[:replied],   "bg-orange-50",  "text-orange-700", "replied"],
+    ["Convertite",   @stats[:converted],  "bg-emerald-50", "text-emerald-700","converted"]
+  ].each do |label, count, bg, text, status_val| %>
+    <%= link_to admin_software_agency_path(status: status_val, category: params[:category], q: params[:q]),
+          class: "#{bg} border border-gray-200 rounded-lg p-3 text-center hover:shadow-sm transition" do %>
+      <div class="text-2xl font-bold <%= text %>"><%= count %></div>
+      <div class="text-xs text-gray-500 mt-0.5"><%= label %></div>
+    <% end %>
+  <% end %>
+</div>
+
+<%# Filtri %>
+<div class="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+  <%= form_with url: admin_software_agency_path, method: :get, local: true, class: "flex flex-wrap gap-3 items-end" do |f| %>
+    <div>
+      <%= f.label :q, "Cerca", class: "block text-xs font-medium text-gray-600 mb-1" %>
+      <%= f.text_field :q, value: params[:q], placeholder: "Nome, citta, provincia...",
+            class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 w-52" %>
+    </div>
+    <div>
+      <%= f.label :status, "Stato", class: "block text-xs font-medium text-gray-600 mb-1" %>
+      <%= f.select :status,
+            [["Tutti", ""]] + Company::STATUSES.map { |s| [s.humanize, s] },
+            { selected: params[:status] },
+            class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+    </div>
+    <div>
+      <%= f.label :category, "Categoria", class: "block text-xs font-medium text-gray-600 mb-1" %>
+      <%= f.select :category,
+            [["Tutte", ""]] + Company::CATEGORIES.map { |c| [c.humanize, c] },
+            { selected: params[:category] },
+            class: "border border-gray-300 rounded px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+    </div>
+    <%= f.submit "Filtra", class: "bg-gray-700 hover:bg-gray-800 text-white text-sm font-medium px-4 py-1.5 rounded cursor-pointer" %>
+    <% if params[:q].present? || params[:status].present? || params[:category].present? %>
+      <%= link_to "Reset", admin_software_agency_path, class: "text-sm text-gray-500 hover:text-gray-700 py-1.5" %>
+    <% end %>
+  <% end %>
+</div>
+
+<%# Tabella %>
+<div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+  <% if @companies.any? %>
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <tr>
+          <th class="px-4 py-3 text-left">Azienda</th>
+          <th class="px-4 py-3 text-left">Categoria</th>
+          <th class="px-4 py-3 text-left">Citta</th>
+          <th class="px-4 py-3 text-left">Telefono</th>
+          <th class="px-4 py-3 text-left">Email</th>
+          <th class="px-4 py-3 text-left">Rating</th>
+          <th class="px-4 py-3 text-left">Sito</th>
+          <th class="px-4 py-3 text-left">Stato</th>
+          <th class="px-4 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @companies.each do |company| %>
+          <tr class="hover:bg-gray-50 transition">
+            <td class="px-4 py-3 font-medium text-gray-900"><%= company.name %></td>
+            <td class="px-4 py-3 text-gray-600 text-sm"><%= company.category&.humanize || "-" %></td>
+            <td class="px-4 py-3 text-gray-600">
+              <%= company.city %>
+              <% if company.province.present? %>
+                <span class="text-gray-400">(<%= company.province %>)</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3 text-gray-600 text-xs"><%= company.phone.presence || "-" %></td>
+            <td class="px-4 py-3">
+              <% if company.email.present? %>
+                <span class="text-emerald-600 text-xs font-medium"><%= company.email %></span>
+              <% else %>
+                <span class="text-gray-300 text-xs">-</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3">
+              <% if company.maps_rating.present? %>
+                <span class="text-amber-500 font-medium">&#9733; <%= company.maps_rating %></span>
+                <span class="text-gray-400 text-xs">(<%= company.maps_reviews_count %>)</span>
+              <% else %>
+                <span class="text-gray-300">-</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3">
+              <% if company.has_website %>
+                <span class="text-red-400 text-xs">Ha sito</span>
+              <% else %>
+                <span class="text-emerald-500 text-xs font-medium">No sito</span>
+              <% end %>
+            </td>
+            <td class="px-4 py-3"><%= status_badge(company.status) %></td>
+            <td class="px-4 py-3 text-right">
+              <%= link_to "Dettaglio", admin_company_path(company),
+                    class: "text-emerald-600 hover:text-emerald-800 font-medium text-sm" %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+
+    <%= render partial: "admin/companies/pagination", locals: {
+      path_helper: :admin_software_agency_path,
+      extra_params: { category: params[:category] }
+    } %>
+  <% else %>
+    <div class="text-center py-16 text-gray-400">
+      <div class="text-4xl mb-3">&#127760;</div>
+      <p class="font-medium">Nessuna PMI trovata</p>
+      <p class="text-sm mt-1">
+        <% if params[:q].present? || params[:status].present? || params[:category].present? %>
+          Prova a modificare i filtri.
+        <% else %>
+          Avvia la ricerca per categoria per trovare le prime PMI senza sito web.
+        <% end %>
+      </p>
+    </div>
+  <% end %>
+</div>
+
+<%# Modal Discovery — solo categoria %>
+<div id="discover-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold">Cerca PMI senza sito web</h2>
+      <button onclick="document.getElementById('discover-modal').classList.add('hidden')"
+        class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+    </div>
+    <%= form_with url: discover_admin_companies_path, method: :post, local: true, class: "px-6 py-4 space-y-4" do |f| %>
+      <%= f.hidden_field :mode, value: "web_agency" %>
+
+      <div>
+        <%= f.label :category, "Categoria", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.select :category,
+              Company::CATEGORIES.map { |c| [c.humanize, c] },
+              { selected: "restaurant" },
+              class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+      </div>
+
+      <div>
+        <%= f.label :location, "Location", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :location, placeholder: "es: Prato, Italia",
+              class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+        <p class="text-xs text-gray-400 mt-1">Inserisci citta e regione/nazione per risultati migliori.</p>
+      </div>
+      <div>
+        <%= f.label :radius, "Raggio (km)", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.number_field :radius, value: 15, min: 1, max: 50,
+              class: "w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" %>
+      </div>
+      <div class="flex justify-end gap-3 pt-2">
+        <button type="button" onclick="document.getElementById('discover-modal').classList.add('hidden')"
+          class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annulla</button>
+        <%= f.submit "Cerca", class: "bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-5 py-2 rounded-lg cursor-pointer" %>
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') document.getElementById('discover-modal').classList.add('hidden');
+  });
+  document.getElementById('discover-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.add('hidden');
+  });
+  document.querySelector('#discover-modal form').addEventListener('submit', function() {
+    var r = this.querySelector('[name="radius"]');
+    r.value = parseInt(r.value) * 1000;
+  });
+</script>

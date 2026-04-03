@@ -5,6 +5,8 @@
 #
 # Responsabilità:
 #   - Chiama Google Places Text Search (New) per trovare attività nella zona
+#   - Suddivide automaticamente l'area in sub-zone (griglia esagonale)
+#     per superare il limite di 60 risultati per singola query
 #   - Per ogni risultato, chiama Place Details (New) per verificare presenza sito web
 #   - Filtra le aziende che non hanno sito web
 #   - Persiste/aggiorna Company records con status "discovered"
@@ -60,8 +62,8 @@ module Discovery
       "notary"              => "notary"
     }.freeze
 
-    # Field mask per Text Search — solo IDs per minimizzare costi API
-    TEXT_SEARCH_FIELD_MASK = "places.id"
+    # Field mask per Text Search — IDs + nextPageToken per paginazione
+    TEXT_SEARCH_FIELD_MASK = "places.id,nextPageToken"
 
     # Field mask per Place Details — tutti i campi necessari
     PLACE_DETAILS_FIELD_MASK = %w[
@@ -69,6 +71,14 @@ module Discovery
       websiteUri rating userRatingCount photos
       addressComponents types businessStatus
     ].join(",")
+
+    # Sub-raggio massimo per ogni zona della griglia (metri).
+    # Con 5000m e 3 pagine da 20, ogni zona può trovare fino a 60 risultati.
+    SUB_ZONE_RADIUS = 5_000
+
+    # Limite massimo di sub-zone per contenere i costi API.
+    # 19 zone × 60 risultati = fino a ~1140 candidati (~300-400 unici).
+    MAX_ZONES = 19
 
     Result = Struct.new(:companies, :errors, :skipped_count, :total_found, keyword_init: true)
 
@@ -98,10 +108,10 @@ module Discovery
     end
 
     def call
-      Rails.logger.info "[GooglePlacesService] Ricerca: #{search_query}"
+      Rails.logger.info "[GooglePlacesService] Ricerca: #{search_text} — location=#{@location} radius=#{@radius}"
 
-      place_ids = fetch_all_place_ids
-      Rails.logger.info "[GooglePlacesService] Place IDs trovati: #{place_ids.size}"
+      place_ids = fetch_place_ids_with_grid
+      Rails.logger.info "[GooglePlacesService] Place IDs unici trovati: #{place_ids.size}"
 
       place_ids.each_with_index do |place_id, idx|
         Rails.logger.debug "[GooglePlacesService] Elaborazione #{idx + 1}/#{place_ids.size}: #{place_id}"
@@ -121,14 +131,115 @@ module Discovery
 
     private
 
-    # ─── Ricerca e paginazione ────────────────────────────────────────────────
+    # ─── Griglia geografica ───────────────────────────────────────────────────
 
-    def fetch_all_place_ids
+    # Geocoda la location testuale in coordinate lat/lng via Places Text Search
+    def geocode_location
+      body = { textQuery: @location, languageCode: "it", maxResultCount: 1 }
+      response = @client.post("/v1/places:searchText") do |req|
+        req.headers["Content-Type"]     = "application/json"
+        req.headers["X-Goog-Api-Key"]   = @api_key
+        req.headers["X-Goog-FieldMask"] = "places.location"
+        req.body = body.to_json
+      end
+
+      return nil unless response.status == 200
+
+      data  = JSON.parse(response.body)
+      place = data.dig("places", 0, "location")
+      return nil unless place
+
+      { lat: place["latitude"], lng: place["longitude"] }
+    rescue => e
+      Rails.logger.warn "[GooglePlacesService] Geocoding fallito: #{e.message}"
+      nil
+    end
+
+    # Genera punti della griglia esagonale che copre il cerchio richiesto.
+    # Restituisce array di { lat:, lng:, radius: } per ogni sub-zona.
+    def generate_grid_zones(center, radius)
+      # Se il raggio è piccolo, basta una zona singola
+      if radius <= SUB_ZONE_RADIUS
+        return [ { lat: center[:lat], lng: center[:lng], radius: radius } ]
+      end
+
+      sub_r = SUB_ZONE_RADIUS
+      zones = []
+
+      # Centro
+      zones << { lat: center[:lat], lng: center[:lng], radius: sub_r }
+
+      # Anelli concentrici con pattern esagonale
+      # Distanza tra centri: 1.5 * sub_r (overlap ~25% per non perdere risultati ai bordi)
+      step = sub_r * 1.5
+      ring = 1
+
+      while step * ring < radius + sub_r
+        dist = step * ring
+        # Punti sull'anello: 6 * ring (pattern esagonale)
+        n_points = 6 * ring
+        n_points.times do |i|
+          angle = (2 * Math::PI * i) / n_points
+          dlat = dist / 111_320.0 # ~111.32 km per grado di latitudine
+          dlng = dist / (111_320.0 * Math.cos(center[:lat] * Math::PI / 180.0))
+          zones << {
+            lat: center[:lat] + dlat * Math.cos(angle),
+            lng: center[:lng] + dlng * Math.sin(angle),
+            radius: sub_r
+          }
+        end
+        ring += 1
+      end
+
+      # Limita il numero di zone per contenere i costi API
+      if zones.size > MAX_ZONES
+        Rails.logger.info "[GooglePlacesService] Griglia troncata: #{zones.size} → #{MAX_ZONES} zone (raggio troppo ampio)"
+        zones = zones.first(MAX_ZONES)
+      end
+
+      zones
+    end
+
+    # Ricerca con griglia: geocoda, genera sub-zone, lancia Text Search per ognuna
+    def fetch_place_ids_with_grid
+      center = geocode_location
+
+      # Fallback: se il geocoding fallisce, usa la ricerca classica senza locationBias
+      if center.nil?
+        Rails.logger.warn "[GooglePlacesService] Geocoding fallito, ricerca senza griglia"
+        return fetch_place_ids_for_zone(nil)
+      end
+
+      zones = generate_grid_zones(center, @radius)
+      Rails.logger.info "[GooglePlacesService] Griglia: #{zones.size} sub-zone (raggio=#{@radius}m, sub=#{SUB_ZONE_RADIUS}m)"
+
+      all_place_ids = []
+
+      zones.each_with_index do |zone, idx|
+        Rails.logger.debug "[GooglePlacesService] Sub-zona #{idx + 1}/#{zones.size}: " \
+                           "lat=#{zone[:lat].round(4)} lng=#{zone[:lng].round(4)} r=#{zone[:radius]}"
+
+        ids = fetch_place_ids_for_zone(zone)
+        new_ids = ids - all_place_ids
+        all_place_ids.concat(new_ids)
+
+        Rails.logger.debug "[GooglePlacesService] Sub-zona #{idx + 1}: #{ids.size} trovati, #{new_ids.size} nuovi (totale: #{all_place_ids.size})"
+
+        # Piccola pausa tra sub-zone per non sovraccaricare la API
+        sleep(0.5) if idx < zones.size - 1
+      end
+
+      all_place_ids
+    end
+
+    # ─── Ricerca e paginazione per singola zona ──────────────────────────────
+
+    def fetch_place_ids_for_zone(zone)
       place_ids       = []
       next_page_token = nil
 
       loop do
-        data = text_search_page(next_page_token)
+        data = text_search_page(next_page_token, zone)
         break if data.nil?
 
         places = data["places"] || []
@@ -148,13 +259,23 @@ module Discovery
       []
     end
 
-    def text_search_page(page_token = nil)
+    def text_search_page(page_token = nil, zone = nil)
       body = {
-        textQuery:      search_query,
+        textQuery:      zone ? search_text : search_query_with_location,
         languageCode:   "it",
         maxResultCount: 20
       }
       body[:pageToken] = page_token if page_token.present?
+
+      # Se abbiamo coordinate, usiamo locationBias per circoscrivere la ricerca
+      if zone
+        body[:locationBias] = {
+          circle: {
+            center: { latitude: zone[:lat], longitude: zone[:lng] },
+            radius: zone[:radius].to_f
+          }
+        }
+      end
 
       response = @client.post("/v1/places:searchText") do |req|
         req.headers["Content-Type"]     = "application/json"
@@ -305,13 +426,18 @@ module Discovery
       end
     end
 
-    def search_query
+    # Testo di ricerca senza location (usato con locationBias)
+    def search_text
       if @free_query.present?
-        "#{@free_query} #{@location}"
+        @free_query
       else
-        term = CATEGORY_QUERY_MAP.fetch(@category, @category.to_s)
-        "#{term} #{@location}"
+        CATEGORY_QUERY_MAP.fetch(@category, @category.to_s)
       end
+    end
+
+    # Testo di ricerca con location (fallback senza geocoding)
+    def search_query_with_location
+      "#{search_text} #{@location}"
     end
 
     def build_client

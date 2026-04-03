@@ -2,7 +2,14 @@ module ApplicationHelper
   # Restituisce le classi Tailwind per il link nella navbar admin,
   # evidenziando il link attivo in base al controller corrente.
   def nav_link_class(section)
-    active = controller_path.start_with?("admin/#{section}")
+    active = case section
+             when "contatti"
+               controller_path == "admin/companies" && (params[:mode] == "outreach" || action_name == "contatti")
+             when "software_agency"
+               controller_path == "admin/companies" && (params[:mode] == "web_agency" || action_name == "software_agency")
+             else
+               controller_path.start_with?("admin/#{section}")
+             end
     if active
       "font-medium text-emerald-600"
     else

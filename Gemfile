@@ -42,6 +42,9 @@ gem "mailgun-ruby", "~> 1.3"
 # Rate limiting
 gem "rack-attack"
 
+# Export XLSX
+gem "caxlsx"
+
 group :development, :test do
   gem "debug", platforms: %i[mri windows]
   gem "dotenv-rails"

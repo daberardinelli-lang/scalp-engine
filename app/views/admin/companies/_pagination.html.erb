@@ -1,0 +1,19 @@
+<%# Paginazione condivisa — locals: path_helper (Symbol), extra_params (Hash) %>
+<% if @total_pages > 1 %>
+  <div class="px-4 py-3 border-t border-gray-200 flex items-center justify-between text-sm text-gray-600">
+    <span>Pagina <%= @current_page %> di <%= @total_pages %> (<%= @total_count %> totali)</span>
+    <div class="flex gap-2">
+      <% base_params = { status: params[:status], q: params[:q] }.merge(extra_params || {}) %>
+      <% if @current_page > 1 %>
+        <%= link_to "Precedente",
+              send(path_helper, base_params.merge(page: @current_page - 1)),
+              class: "px-3 py-1 border border-gray-300 rounded hover:bg-gray-50" %>
+      <% end %>
+      <% if @current_page < @total_pages %>
+        <%= link_to "Successiva",
+              send(path_helper, base_params.merge(page: @current_page + 1)),
+              class: "px-3 py-1 border border-gray-300 rounded hover:bg-gray-50" %>
+      <% end %>
+    </div>
+  </div>
+<% end %>

@@ -7,13 +7,13 @@ class EnrichmentJob < ApplicationJob
   discard_on ActiveJob::DeserializationError
 
   # Parametri:
-  #   company_id: Integer — ID della Company da arricchire
-  #               oppure nil per processare tutte le "discovered" (batch)
-  def perform(company_id: nil)
+  #   company_id:  Integer — ID della Company da arricchire (nil = batch tutte le discovered)
+  #   enrich_mode: "full" (email + recensioni) | "email_only" (solo email, più veloce)
+  def perform(company_id: nil, enrich_mode: "full")
     if company_id.present?
-      enrich_single(company_id)
+      enrich_single(company_id, enrich_mode)
     else
-      enrich_batch
+      enrich_batch(enrich_mode)
     end
   end
 
@@ -21,7 +21,7 @@ class EnrichmentJob < ApplicationJob
 
   # ─── Singola company ───────────────────────────────────────────────────────
 
-  def enrich_single(company_id)
+  def enrich_single(company_id, enrich_mode)
     company = Company.kept.find(company_id)
 
     unless company.status == "discovered"
@@ -29,32 +29,27 @@ class EnrichmentJob < ApplicationJob
       return
     end
 
-    Rails.logger.info "[EnrichmentJob] Arricchimento company_id=#{company_id}"
+    Rails.logger.info "[EnrichmentJob] Arricchimento company_id=#{company_id} mode=#{enrich_mode}"
 
-    result = Discovery::EnrichmentService.call(company: company)
+    result = Discovery::EnrichmentService.call(company: company, enrich_mode: enrich_mode)
 
     log_result(result)
   rescue ActiveRecord::RecordNotFound
     Rails.logger.warn "[EnrichmentJob] Company #{company_id} non trovata — discard"
-    # Non ritenta: la company non esiste
   end
 
   # ─── Batch: tutte le discovered ───────────────────────────────────────────
 
-  def enrich_batch
+  def enrich_batch(enrich_mode)
     companies = Company.kept
                        .where(status: "discovered")
                        .where(opted_out_at: nil)
                        .order(:created_at)
 
-    Rails.logger.info "[EnrichmentJob] Batch: #{companies.count} aziende da arricchire"
+    Rails.logger.info "[EnrichmentJob] Batch: #{companies.count} aziende da arricchire (mode=#{enrich_mode})"
 
     companies.find_each do |company|
-      # Enqueue job individuale invece di processare inline —
-      # evita timeout del job e permette retry granulare
-      EnrichmentJob.perform_later(company_id: company.id)
-
-      # Piccolo delay tra gli enqueue per non saturare la coda
+      EnrichmentJob.perform_later(company_id: company.id, enrich_mode: enrich_mode)
       sleep(0.1)
     end
   end

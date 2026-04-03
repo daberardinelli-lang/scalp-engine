@@ -6,7 +6,7 @@ Rails.application.routes.draw do
   }
 
   authenticated :user do
-    root to: "dashboard#index", as: :authenticated_root
+    root to: redirect("/admin/contatti"), as: :authenticated_root
   end
 
   root to: redirect("/auth/login")
@@ -18,23 +18,32 @@ Rails.application.routes.draw do
 
   # Dashboard
   namespace :admin do
-    resources :companies, only: [:index, :show] do
+    # Sezione Contatti (outreach/campagne)
+    get  "contatti",            to: "companies#contatti",       as: :contatti
+    get  "contatti/export",     to: "companies#export_xlsx",    as: :contatti_export, defaults: { mode: "outreach" }
+
+    # Sezione Software Agency (demo siti)
+    get  "software-agency",           to: "companies#software_agency",  as: :software_agency
+    get  "software-agency/export",    to: "companies#export_xlsx",      as: :software_agency_export, defaults: { mode: "web_agency" }
+
+    resources :companies, only: [:show] do
       collection do
-        post :discover         # avvia DiscoveryJob (Google Places)
-        post :batch_enrich     # avvia EnrichmentJob su tutte le discovered
-        post :batch_generate   # avvia ContentGenerationJob su tutte le enriched
-        post :batch_build      # avvia DemoBuildJob su tutte le demo_built
-        post :batch_email      # avvia OutreachEmailJob su tutte le contattabili
+        post :discover
+        post :batch_enrich
+        post :batch_generate
+        post :batch_build
+        post :batch_email
+        get  :export_xlsx
       end
       member do
-        post :enrich           # avvia EnrichmentJob su singola company
-        post :generate_content # avvia ContentGenerationJob su singola company
-        post :build_demo       # avvia DemoBuildJob su singola company
-        post :send_email       # avvia OutreachEmailJob su singola company
+        post :enrich
+        post :generate_content
+        post :build_demo
+        post :send_email
         post :mark_replied
         post :mark_converted
-        patch :update_contact  # aggiorna email, email_status, note
-        patch :restore_email   # ripristina email originale scraped
+        patch :update_contact
+        patch :restore_email
       end
     end
     resources :leads,     only: [:index, :show]

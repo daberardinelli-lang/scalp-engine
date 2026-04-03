@@ -62,14 +62,40 @@ module Discovery
 
         doc = Nokogiri::HTML(html)
 
-        # PagineGialle mostra i risultati in elementi con classe "listing-item"
-        # Il link alla scheda è un <a> con href verso /pg/{slug}
-        listing_link = doc.css("a.listing-item__name, a[href*='/pg/'], .listing h2 a, .title-company a")
-                          .first
+        # PagineGialle struttura 2024+: div.search-itm contiene le schede aziendali
+        # Il link alla scheda è un <a> con href verso paginegialle.it/{slug}
+        doc.css("div.search-itm").each do |itm|
+          link = itm.css("a[href]").find do |a|
+            href = a["href"].to_s
+            href.match?(%r{paginegialle\.it/[a-z]}) &&
+              !href.include?("/ricerca/") &&
+              !href.include?("/magazine") &&
+              !href.include?("/categori")
+          end
+          next if link.nil?
 
-        return nil if listing_link.nil?
+          # Verifica che il nome azienda nel risultato corrisponda ragionevolmente
+          itm_name = itm.css("h2").text.to_s.strip.downcase
+          company_words = @company.name.downcase.split(/\s+/).select { |w| w.length > 3 }
+          # Almeno una parola significativa del nome deve essere presente
+          match = company_words.empty? || company_words.any? { |w| itm_name.include?(w) }
+          next unless match
 
-        href = listing_link["href"].to_s
+          href = link["href"].to_s
+          return href.start_with?("http") ? href : "#{BASE_URL}#{href}"
+        end
+
+        # Fallback: primo risultato search-itm se presente
+        first_itm = doc.css("div.search-itm a[href]").find do |a|
+          href = a["href"].to_s
+          href.match?(%r{paginegialle\.it/[a-z]}) &&
+            !href.include?("/ricerca/") &&
+            !href.include?("/magazine") &&
+            !href.include?("/categori")
+        end
+        return nil if first_itm.nil?
+
+        href = first_itm["href"].to_s
         href.start_with?("http") ? href : "#{BASE_URL}#{href}"
       end
 
@@ -81,20 +107,20 @@ module Discovery
 
         doc = Nokogiri::HTML(html)
 
-        # 1. Cerca link mailto: (fonte più affidabile)
-        mailto = doc.css("a[href^='mailto:']").first
-        if mailto
-          email = mailto["href"].sub(/\Amailto:/i, "").split("?").first.strip
+        # 1. Cerca link mailto: che contengano email dell'azienda (non "segnala ad amico")
+        doc.css("a[href^='mailto:']").each do |mailto|
+          href = mailto["href"].to_s
+          # Salta i mailto di condivisione PagineGialle (contengono subject= nel link)
+          next if href.include?("subject=")
+          email = href.sub(/\Amailto:/i, "").split("?").first.strip
           return email if valid_email?(email)
         end
 
-        # 2. Cerca pattern email nel testo visibile della pagina
-        # Limitato ai tag rilevanti per evitare falsi positivi
-        candidate_nodes = doc.css("p, span, div.contact, .email, [class*='email'], [class*='contact']")
-        candidate_nodes.each do |node|
-          match = node.text.scan(EMAIL_REGEX).first
-          next if match.nil?
-          return match if valid_email?(match)
+        # 2. Cerca pattern email nel testo visibile dell'intera pagina
+        # PagineGialle mostra l'email in vari contenitori non predicibili
+        all_emails = doc.text.scan(EMAIL_REGEX).uniq
+        all_emails.each do |email|
+          return email if valid_email?(email)
         end
 
         nil

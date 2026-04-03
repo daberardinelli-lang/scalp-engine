@@ -3,38 +3,18 @@ class Admin::CompaniesController < Admin::BaseController
 
   PER_PAGE = 25
 
-  def index
-    # Rilevamento modalità: esplicita via ?mode= oppure implicita da campaign_id
-    @mode = params[:mode].presence
-    @mode ||= "outreach" if params[:campaign_id].present?
+  # GET /admin/contatti — sezione Contatti (outreach/campagne)
+  def contatti
+    @mode = "outreach"
+    load_companies_list
+    render :contatti
+  end
 
-    base = Company.kept
-                  .includes(:campaign)
-                  .order(created_at: :desc)
-                  .then { |q| filter_by_mode(q) }
-                  .then { |q| filter_by_status(q) }
-                  .then { |q| filter_by_category(q) }
-                  .then { |q| filter_by_campaign(q) }
-                  .then { |q| filter_by_search(q) }
-
-    @total_count = base.count
-    @current_page = [params[:page].to_i, 1].max
-    @total_pages  = [(@total_count / PER_PAGE.to_f).ceil, 1].max
-    @current_page = [@current_page, @total_pages].min
-
-    @companies = base.offset((@current_page - 1) * PER_PAGE).limit(PER_PAGE)
-
-    # Stats filtrate per modalità corrente
-    mode_base = mode_scope
-    @stats = {
-      total:       mode_base.count,
-      discovered:  mode_base.where(status: "discovered").count,
-      enriched:    mode_base.where(status: "enriched").count,
-      demo_built:  mode_base.where(status: "demo_built").count,
-      contacted:   mode_base.where(status: "contacted").count,
-      replied:     mode_base.where(status: "replied").count,
-      converted:   mode_base.where(status: "converted").count
-    }
+  # GET /admin/software-agency — sezione Software Agency (demo siti)
+  def software_agency
+    @mode = "web_agency"
+    load_companies_list
+    render :software_agency
   end
 
   def show
@@ -54,7 +34,7 @@ class Admin::CompaniesController < Admin::BaseController
     if campaign_id.present?
       # Modalità Campaign: query libera
       campaign = Campaign.find_by(id: campaign_id)
-      return redirect_to admin_companies_path, alert: "Campagna non trovata." unless campaign
+      return redirect_to admin_contatti_path, alert: "Campagna non trovata." unless campaign
 
       DiscoveryJob.perform_later(
         campaign_id: campaign.id,
@@ -62,14 +42,14 @@ class Admin::CompaniesController < Admin::BaseController
         radius:      radius
       )
 
-      redirect_to admin_companies_path,
-                  notice: "Discovery avviata per campagna '#{campaign.name}' in '#{location}' (raggio #{radius / 1000} km)."
+      redirect_to admin_contatti_path,
+                  notice: "Ricerca avviata per campagna '#{campaign.name}' in '#{location}' (raggio #{radius / 1000} km)."
     else
       # Modalità classica: categoria fissa
       category = params[:category].to_s
 
       unless Company::CATEGORIES.include?(category)
-        return redirect_to admin_companies_path,
+        return redirect_to admin_software_agency_path,
                            alert: "Categoria non valida: #{category}"
       end
 
@@ -79,8 +59,8 @@ class Admin::CompaniesController < Admin::BaseController
         radius:   radius
       )
 
-      redirect_to admin_companies_path,
-                  notice: "Discovery avviata per '#{category}' in '#{location}' (raggio #{radius / 1000} km). " \
+      redirect_to admin_software_agency_path,
+                  notice: "Ricerca avviata per '#{category}' in '#{location}' (raggio #{radius / 1000} km). " \
                           "I risultati appariranno entro qualche minuto."
     end
   end
@@ -92,10 +72,13 @@ class Admin::CompaniesController < Admin::BaseController
                          alert: "Solo le aziende in stato 'discovered' possono essere arricchite."
     end
 
-    EnrichmentJob.perform_later(company_id: @company.id)
+    enrich_mode = params[:enrich_mode].presence || "full"
 
+    EnrichmentJob.perform_later(company_id: @company.id, enrich_mode: enrich_mode)
+
+    label = enrich_mode == "email_only" ? "solo email" : "email + recensioni"
     redirect_to admin_company_path(@company),
-                notice: "Arricchimento avviato per '#{@company.name}'. Ricarica tra qualche minuto."
+                notice: "Arricchimento (#{label}) avviato per '#{@company.name}'. Ricarica tra qualche minuto."
   end
 
   # POST /admin/companies/batch_enrich
@@ -107,10 +90,71 @@ class Admin::CompaniesController < Admin::BaseController
                          alert: "Nessuna azienda in stato 'discovered' da arricchire."
     end
 
-    EnrichmentJob.perform_later   # senza company_id → batch
+    enrich_mode = params[:enrich_mode].presence || "full"
 
+    EnrichmentJob.perform_later(enrich_mode: enrich_mode)   # senza company_id → batch
+
+    label = enrich_mode == "email_only" ? "solo email" : "email + recensioni"
     redirect_to admin_companies_path,
-                notice: "Batch enrichment avviato per #{count} aziende. I risultati appariranno progressivamente."
+                notice: "Batch enrichment (#{label}) avviato per #{count} aziende. I risultati appariranno progressivamente."
+  end
+
+  # GET /admin/companies/export_xlsx
+  def export_xlsx
+    companies = Company.kept
+                       .includes(:campaign)
+                       .then { |q| filter_by_mode(q) }
+                       .then { |q| filter_by_status(q) }
+                       .then { |q| filter_by_campaign(q) }
+                       .then { |q| filter_by_search(q) }
+                       .order(:name)
+
+    package = Axlsx::Package.new
+    wb = package.workbook
+
+    # Stili
+    header_style = wb.styles.add_style(
+      b: true, bg_color: "4472C4", fg_color: "FFFFFF",
+      alignment: { horizontal: :center }, border: { style: :thin, color: "000000" }
+    )
+    cell_style = wb.styles.add_style(
+      border: { style: :thin, color: "D9D9D9" },
+      alignment: { vertical: :center, wrap_text: true }
+    )
+
+    wb.add_worksheet(name: "Aziende") do |sheet|
+      sheet.add_row [
+        "Nome", "Categoria", "Città", "Provincia", "Indirizzo", "Telefono",
+        "Email", "Email Source", "Stato", "Rating", "N. Recensioni",
+        "Ha sito web", "Campagna", "Data scoperta"
+      ], style: header_style
+
+      companies.find_each do |c|
+        sheet.add_row [
+          c.name,
+          c.category,
+          c.city,
+          c.province,
+          c.address,
+          c.phone,
+          c.email,
+          c.email_source,
+          c.status,
+          c.maps_rating,
+          c.maps_reviews_count,
+          c.has_website ? "Sì" : "No",
+          c.campaign&.name,
+          c.created_at&.strftime("%d/%m/%Y %H:%M")
+        ], style: cell_style
+      end
+
+      # Auto-larghezza colonne
+      sheet.column_widths 35, 15, 15, 8, 25, 18, 30, 14, 12, 8, 12, 10, 20, 16
+    end
+
+    send_data package.to_stream.read,
+              filename: "aziende_#{Date.today.strftime('%Y%m%d')}.xlsx",
+              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   end
 
   # POST /admin/companies/:id/generate_content
@@ -277,6 +321,35 @@ class Admin::CompaniesController < Admin::BaseController
   end
 
   private
+
+  def load_companies_list
+    base = Company.kept
+                  .includes(:campaign)
+                  .order(created_at: :desc)
+                  .then { |q| filter_by_mode(q) }
+                  .then { |q| filter_by_status(q) }
+                  .then { |q| filter_by_category(q) }
+                  .then { |q| filter_by_campaign(q) }
+                  .then { |q| filter_by_search(q) }
+
+    @total_count = base.count
+    @current_page = [params[:page].to_i, 1].max
+    @total_pages  = [(@total_count / PER_PAGE.to_f).ceil, 1].max
+    @current_page = [@current_page, @total_pages].min
+
+    @companies = base.offset((@current_page - 1) * PER_PAGE).limit(PER_PAGE)
+
+    mode_base = mode_scope
+    @stats = {
+      total:       mode_base.count,
+      discovered:  mode_base.where(status: "discovered").count,
+      enriched:    mode_base.where(status: "enriched").count,
+      demo_built:  mode_base.where(status: "demo_built").count,
+      contacted:   mode_base.where(status: "contacted").count,
+      replied:     mode_base.where(status: "replied").count,
+      converted:   mode_base.where(status: "converted").count
+    }
+  end
 
   def set_company
     @company = Company.kept.find(params[:id])

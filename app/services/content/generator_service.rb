@@ -2,7 +2,7 @@
 #
 # Fase 3 — Generazione contenuti AI
 #
-# Chiama Claude API (claude-opus-4-6) per generare i contenuti della landing page demo:
+# Chiama Claude API (claude-sonnet-4-6) per generare i contenuti della landing page demo:
 #   - generated_headline : titolo principale
 #   - generated_about    : paragrafo descrittivo
 #   - generated_services : array di servizi/prodotti tipici
@@ -20,7 +20,7 @@
 module Content
   class GeneratorService
     ANTHROPIC_API_URL = "https://api.anthropic.com"
-    MODEL             = "claude-opus-4-6"
+    MODEL             = "claude-sonnet-4-6"
     ANTHROPIC_VERSION = "2023-06-01"
 
     # Prompt di sistema: istruisce Claude a rispondere SOLO con JSON valido
