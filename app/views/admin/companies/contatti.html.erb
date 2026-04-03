@@ -102,13 +102,13 @@
     <table class="min-w-full divide-y divide-gray-200 text-sm">
       <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
         <tr>
-          <th class="px-4 py-3 text-left">Nome</th>
+          <th class="px-4 py-3 text-left"><%= sortable_header("Nome", :name, path_helper: :admin_contatti_path) %></th>
           <th class="px-4 py-3 text-left">Campagna</th>
-          <th class="px-4 py-3 text-left">Citta</th>
+          <th class="px-4 py-3 text-left"><%= sortable_header("Citta", :city, path_helper: :admin_contatti_path) %></th>
           <th class="px-4 py-3 text-left">Telefono</th>
           <th class="px-4 py-3 text-left">Email</th>
           <th class="px-4 py-3 text-center">WA</th>
-          <th class="px-4 py-3 text-left">Stato</th>
+          <th class="px-4 py-3 text-left"><%= sortable_header("Stato", :status, path_helper: :admin_contatti_path) %></th>
           <th class="px-4 py-3 text-left">Scoperto il</th>
           <th class="px-4 py-3"></th>
         </tr>

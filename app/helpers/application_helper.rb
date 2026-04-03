@@ -39,6 +39,32 @@ module ApplicationHelper
     "Posso inviarvi i dettagli?"
   end
 
+  # Header tabella ordinabile — genera link con freccia direzione
+  def sortable_header(label, column, path_helper:, extra_params: {})
+    current_sort = params[:sort] == column.to_s
+    current_dir  = params[:dir] == "asc" ? "asc" : "desc"
+    next_dir     = current_sort && current_dir == "desc" ? "asc" : "desc"
+
+    arrow = if current_sort
+              current_dir == "asc" ? " &#9650;" : " &#9660;"
+            else
+              ""
+            end
+
+    link_params = extra_params.merge(
+      sort: column, dir: next_dir,
+      status: params[:status], q: params[:q], page: 1,
+      category: params[:category], campaign_id: params[:campaign_id],
+      email_filter: params[:email_filter]
+    ).compact_blank
+
+    link_to(
+      "#{label}#{arrow}".html_safe,
+      send(path_helper, link_params),
+      class: "hover:text-gray-900 #{current_sort ? 'text-gray-900 font-bold' : ''}"
+    )
+  end
+
   # Badge colorato per lo status pipeline di un'azienda
   def status_badge(status)
     colors = {

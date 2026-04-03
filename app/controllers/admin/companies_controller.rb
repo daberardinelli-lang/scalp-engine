@@ -327,13 +327,13 @@ class Admin::CompaniesController < Admin::BaseController
   def load_companies_list
     base = Company.kept
                   .includes(:campaign)
-                  .order(created_at: :desc)
                   .then { |q| filter_by_mode(q) }
                   .then { |q| filter_by_status(q) }
                   .then { |q| filter_by_category(q) }
                   .then { |q| filter_by_campaign(q) }
                   .then { |q| filter_by_search(q) }
                   .then { |q| filter_by_email(q) }
+                  .then { |q| apply_sort(q) }
 
     @total_count = base.count
     @current_page = [params[:page].to_i, 1].max
@@ -404,6 +404,19 @@ class Admin::CompaniesController < Admin::BaseController
 
     q = "%#{params[:q]}%"
     scope.where("name ILIKE ? OR city ILIKE ? OR province ILIKE ?", q, q, q)
+  end
+
+  SORTABLE_COLUMNS = %w[name city maps_rating maps_reviews_count created_at status].freeze
+
+  def apply_sort(scope)
+    col = SORTABLE_COLUMNS.include?(params[:sort]) ? params[:sort] : "created_at"
+    dir = params[:dir] == "asc" ? :asc : :desc
+    # Per rating: metti i nil in fondo
+    if col == "maps_rating"
+      scope.order(Arel.sql("maps_rating IS NULL, maps_rating #{dir == :asc ? 'ASC' : 'DESC'}"))
+    else
+      scope.order(col => dir)
+    end
   end
 
   def filter_by_email(scope)

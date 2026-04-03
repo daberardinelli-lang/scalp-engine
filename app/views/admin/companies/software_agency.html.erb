@@ -114,15 +114,15 @@
     <table class="min-w-full divide-y divide-gray-200 text-sm">
       <thead class="bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
         <tr>
-          <th class="px-4 py-3 text-left">Azienda</th>
+          <th class="px-4 py-3 text-left"><%= sortable_header("Azienda", :name, path_helper: :admin_software_agency_path) %></th>
           <th class="px-4 py-3 text-left">Categoria</th>
-          <th class="px-4 py-3 text-left">Citta</th>
+          <th class="px-4 py-3 text-left"><%= sortable_header("Citta", :city, path_helper: :admin_software_agency_path) %></th>
           <th class="px-4 py-3 text-left">Telefono</th>
           <th class="px-4 py-3 text-left">Email</th>
           <th class="px-4 py-3 text-center">WA</th>
-          <th class="px-4 py-3 text-left">Rating</th>
+          <th class="px-4 py-3 text-left"><%= sortable_header("Rating", :maps_rating, path_helper: :admin_software_agency_path) %></th>
           <th class="px-4 py-3 text-left">Sito</th>
-          <th class="px-4 py-3 text-left">Stato</th>
+          <th class="px-4 py-3 text-left"><%= sortable_header("Stato", :status, path_helper: :admin_software_agency_path) %></th>
           <th class="px-4 py-3"></th>
         </tr>
       </thead>
