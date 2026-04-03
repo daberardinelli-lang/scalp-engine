@@ -32,7 +32,6 @@ module Discovery
         req.headers["X-Goog-Api-Key"]   = @api_key
         req.headers["X-Goog-FieldMask"] = "reviews"
         req.params["languageCode"]       = "it"
-        req.params["reviewsSort"]        = "NEWEST"
       end
 
       unless response.status == 200
