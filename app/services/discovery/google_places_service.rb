@@ -380,6 +380,7 @@ module Discovery
         maps_rating:        details["rating"],
         maps_reviews_count: details["userRatingCount"] || 0,
         has_website:        details["websiteUri"].present?,
+        website:            details["websiteUri"],
         maps_photo_urls:    photo_urls,
         status:             "discovered"
       }

@@ -15,9 +15,14 @@
 
 module Discovery
   class EmailExtractorService
+    # Pipeline di strategie in ordine di affidabilità/velocità:
+    #   1. Website      — sito ufficiale dell'azienda (più affidabile)
+    #   2. PagineGialle — directory business italiana (buona copertura PMI)
+    #   3. GoogleSearch  — cerca email nei risultati Google (ampia copertura)
     STRATEGIES = [
+      Strategies::WebsiteStrategy,
       Strategies::PagineGialleStrategy,
-      Strategies::FacebookStrategy
+      Strategies::GoogleSearchStrategy
     ].freeze
 
     # Delay tra una strategia e l'altra (cortesia verso i server)
