@@ -50,10 +50,12 @@ module DemoBuilder
         "company_name"       => @company.name.to_s,
         "city"               => @company.city.to_s,
         "province"           => @company.province.to_s,
+        "address"            => @company.address.to_s,
         "phone"              => @company.phone.to_s,
         "phone_clean"        => clean_phone(@company.phone),
         "category_label"     => category_label,
         "google_maps_url"    => google_maps_url,
+        "google_place_id"    => @company.google_place_id.to_s,
 
         # Valutazione
         "maps_rating"        => @company.maps_rating.to_s,
@@ -72,6 +74,12 @@ module DemoBuilder
 
         # Recensioni: solo quelle con testo e rating ≥ 4
         "reviews"            => best_reviews,
+
+        # WhatsApp: link diretto con messaggio precomposto
+        "whatsapp_url"       => build_whatsapp_url,
+
+        # Google Maps Embed (per iframe nella sezione contatti)
+        "google_maps_embed_key" => ENV.fetch("GOOGLE_PLACES_API_KEY", ""),
 
         # Brand & meta
         "brand_name"         => ENV.fetch("BRAND_NAME", "WebRadar"),
@@ -125,6 +133,20 @@ module DemoBuilder
       return "" if @company.google_place_id.blank?
 
       "https://www.google.com/maps/place/?q=place_id:#{@company.google_place_id}"
+    end
+
+    # Costruisce URL WhatsApp con messaggio precomposto
+    def build_whatsapp_url
+      phone = clean_phone(@company.phone)
+      return "" if phone.blank?
+
+      # Assicura prefisso internazionale italiano
+      number = phone.delete("+")
+      number = "39#{number}" unless number.start_with?("39")
+
+      message = "Buongiorno! Ho visto il sito demo di #{@company.name} " \
+                "e vorrei maggiori informazioni. Grazie!"
+      "https://wa.me/#{number}?text=#{ERB::Util.url_encode(message)}"
     end
 
     # Rimuove caratteri non numerici eccetto il + iniziale

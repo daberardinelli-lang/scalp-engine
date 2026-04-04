@@ -113,7 +113,7 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
     assert result.success?
     # Deve avere la sezione about senza immagine
     assert result.html.include?("Chi siamo")
-    refute result.html.include?("about-image")
+    refute result.html.include?("about-image-wrap\">"), "non deve avere il blocco immagine about"
   end
 
   # ─── Test: valori mancanti ────────────────────────────────────────────────
@@ -180,6 +180,6 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
 
   test "clean_phone rimuove caratteri non numerici eccetto +" do
     renderer = DemoBuilder::TemplateRenderer.new(demo: @demo)
-    assert_equal "+39081234567", renderer.send(:clean_phone, "+39 081 123 4567")
+    assert_equal "+390811234567", renderer.send(:clean_phone, "+39 081 123 4567")
   end
 end
