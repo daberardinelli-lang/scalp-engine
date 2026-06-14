@@ -14,13 +14,17 @@ module DemoBuilder
       def success? = errors.empty?
     end
 
-    def self.render(demo:)
-      new(demo: demo).render
+    # photo_paths: path locali delle foto già scaricate (es. ["img/photo_1.jpg"]).
+    #   - nil  → fallback agli URL Google in maps_photo_urls (render diretto/legacy)
+    #   - []   → nessuna foto (download fallito): galleria nascosta, niente URL Google
+    def self.render(demo:, photo_paths: nil)
+      new(demo: demo, photo_paths: photo_paths).render
     end
 
-    def initialize(demo:)
-      @demo    = demo
-      @company = demo.company
+    def initialize(demo:, photo_paths: nil)
+      @demo        = demo
+      @company     = demo.company
+      @photo_paths = photo_paths
     end
 
     def render
@@ -43,6 +47,12 @@ module DemoBuilder
     end
 
     private
+
+    # Sorgenti foto: path locali scaricati (preferiti) o URL Google (fallback legacy).
+    # nil = non fornito → usa maps_photo_urls; [] = download fallito → nessuna foto.
+    def photo_sources
+      @photo_sources ||= @photo_paths.nil? ? Array(@company.maps_photo_urls) : @photo_paths
+    end
 
     def build_assigns
       {
@@ -68,9 +78,10 @@ module DemoBuilder
         "services"           => @demo.services_list,
         "cta_text"           => @demo.generated_cta.to_s,
 
-        # Foto: prima foto separata per hero about, resto per gallery
-        "first_photo"        => (@company.maps_photo_urls.first || "").to_s,
-        "photos"             => (@company.maps_photo_urls[1..] || []),
+        # Foto: prima foto separata per hero about, resto per gallery.
+        # Usa i path locali scaricati al build (preferiti) o gli URL Google (fallback).
+        "first_photo"        => (photo_sources.first || "").to_s,
+        "photos"             => (photo_sources[1..] || []),
 
         # Recensioni: solo quelle con testo e rating ≥ 4
         "reviews"            => best_reviews,

@@ -31,7 +31,13 @@ class DemoBuildJob < ApplicationJob
       return
     end
 
-    result = DemoBuilder::TemplateRenderer.render(demo: demo)
+    # Scarica le foto Google in locale: gli URL Google scadono ed espongono la API key
+    photo_result = DemoBuilder::PhotoDownloader.call(demo: demo)
+    if photo_result.errors.any?
+      Rails.logger.warn "[DemoBuildJob] #{company.name}: #{photo_result.errors.size} foto non scaricate — #{photo_result.errors.join('; ')}"
+    end
+
+    result = DemoBuilder::TemplateRenderer.render(demo: demo, photo_paths: photo_result.paths)
     unless result.success?
       raise "TemplateRenderer failed for #{company.name}: #{result.errors.join(', ')}"
     end
@@ -41,7 +47,7 @@ class DemoBuildJob < ApplicationJob
       raise "DeployService failed for #{company.name}: #{deploy_result.errors.join(', ')}"
     end
 
-    Rails.logger.info "[DemoBuildJob] ✓ #{company.name} → #{deploy_result.html_path}"
+    Rails.logger.info "[DemoBuildJob] ✓ #{company.name} → #{deploy_result.html_path} (#{photo_result.paths.size} foto locali)"
   end
 
   def run_batch

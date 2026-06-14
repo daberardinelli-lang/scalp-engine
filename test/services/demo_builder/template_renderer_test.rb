@@ -105,6 +105,28 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
     assert result.html.include?("https://example.com/foto2.jpg")
   end
 
+  test "usa i path locali quando photo_paths è fornito, non gli URL Google" do
+    result = DemoBuilder::TemplateRenderer.render(
+      demo:        @demo,
+      photo_paths: ["img/photo_1.jpg", "img/photo_2.jpg"]
+    )
+
+    assert result.success?, result.errors.inspect
+    assert result.html.include?("img/photo_1.jpg")
+    assert result.html.include?("img/photo_2.jpg")
+    # La API key e gli URL Google non devono finire nell'HTML
+    refute result.html.include?("example.com/foto1.jpg"), "non deve usare gli URL Google"
+    refute result.html.include?("places.googleapis.com"), "non deve esporre il media endpoint Google"
+  end
+
+  test "con photo_paths vuoto nasconde la gallery e non usa URL Google" do
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo, photo_paths: [])
+
+    assert result.success?
+    refute result.html.include?("example.com/foto1.jpg"), "non deve ricadere sugli URL Google"
+    refute result.html.include?("I nostri ambienti"), "gallery deve essere nascosta"
+  end
+
   test "renderizza correttamente senza foto" do
     @company.update_column(:maps_photo_urls, [])
 

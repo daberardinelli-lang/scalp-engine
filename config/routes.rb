@@ -55,6 +55,11 @@ Rails.application.routes.draw do
     end
   end
 
+  # Immagini statiche delle demo in sviluppo (in produzione: nginx wildcard subdomain)
+  get "/demos/:subdomain/img/:filename", to: "demo_previews#image", as: :demo_preview_image,
+      constraints: { subdomain: /[a-z0-9\-]+/, filename: /[a-zA-Z0-9_\-]+\.(jpe?g|png|webp)/ },
+      format: false
+
   # Preview demo HTML in sviluppo (in produzione: nginx wildcard subdomain)
   get "/demos/:subdomain", to: "demo_previews#show", as: :demo_preview,
       constraints: { subdomain: /[a-z0-9\-]+/ }
