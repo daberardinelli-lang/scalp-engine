@@ -308,6 +308,77 @@
       50% { box-shadow: 0 8px 50px rgba(251,191,36,0.55) }
     }
 
+    /* ── Hero con foto reale ──────────────────────────────────── */
+    .hero-photo { background: #07140e; min-height: 86vh; }
+    .hero-photo-bg {
+      position: absolute;
+      inset: -60px;                 /* margine extra per il parallax */
+      background-size: cover;
+      background-position: center;
+      transform: scale(1.12);
+      will-change: transform;
+      z-index: 1;
+      animation: heroZoom 20s ease-in-out infinite alternate;
+    }
+    @keyframes heroZoom {
+      from { transform: scale(1.12) translate(0, 0) }
+      to   { transform: scale(1.22) translate(0, -14px) }
+    }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background:
+        radial-gradient(70% 60% at 50% 52%, rgba(0,0,0,0.42), transparent 70%),
+        linear-gradient(180deg, rgba(7,20,14,0.20) 0%, rgba(7,20,14,0.05) 42%, rgba(7,20,14,0.62) 100%);
+    }
+    .hero-photo .hero-content {
+      text-shadow: 0 2px 24px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.5);
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+    }
+    .hero-photo .hero-meta,
+    .hero-photo .hero-rating-label { color: #d1fae5; }
+
+    /* Entrata cinematografica hero (solo se il moto è consentito) */
+    @media (prefers-reduced-motion: no-preference) {
+      .hero-photo .hero-content > * {
+        opacity: 0;
+        animation: heroRise 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+      .hero-photo h1              { animation-delay: 0.15s }
+      .hero-photo .hero-meta      { animation-delay: 0.45s }
+      .hero-photo .hero-rating-box { animation-delay: 0.65s }
+      .hero-photo .hero-btn {
+        animation: heroRise 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.85s forwards,
+                   pulse 2.5s ease-in-out 2s infinite;
+      }
+    }
+    @keyframes heroRise {
+      from { opacity: 0; transform: translateY(28px); filter: blur(6px) }
+      to   { opacity: 1; transform: translateY(0);    filter: blur(0) }
+    }
+
+    /* ── Tilt 3D interattivo (immagini "wow") ─────────────────── */
+    .tilt-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform;
+    }
+    .tilt-glare {
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(circle at var(--gx, 50%) var(--gy, 50%),
+                  rgba(255,255,255,0.35), rgba(255,255,255,0) 55%);
+      opacity: 0;
+      transition: opacity 0.25s;
+      pointer-events: none;
+      z-index: 4;
+    }
+    .tilt-3d.tilting .tilt-glare { opacity: 1; }
+
     /* ── Wave separator ───────────────────────────────────────── */
     .wave-separator {
       position: relative;
@@ -451,6 +522,7 @@
       content: '🔍';
       position: absolute;
       inset: 0;
+      z-index: 5;
       background: rgba(0,0,0,0.35);
       display: flex;
       align-items: center;
@@ -784,11 +856,16 @@
 </nav>
 
 <!-- Hero -->
-<section class="hero">
+<section class="hero{% if hero_photo != "" %} hero-photo{% endif %}">
+  {% if hero_photo != "" %}
+  <div class="hero-photo-bg" data-parallax style="background-image:url('{{ hero_photo }}')"></div>
+  <div class="hero-overlay"></div>
+  {% else %}
   <div class="hero-bg"></div>
   <div class="hero-blob hero-blob-1"></div>
   <div class="hero-blob hero-blob-2"></div>
   <div class="hero-blob hero-blob-3"></div>
+  {% endif %}
 
   <div class="hero-content">
     <h1 id="heroTitle">{{ headline }}</h1>
@@ -824,8 +901,9 @@
         <p class="about-text">{{ about }}</p>
       </div>
       <div class="about-image-wrap reveal-right">
-        <div class="about-image">
+        <div class="about-image tilt-3d">
           <img src="{{ first_photo }}" alt="{{ company_name }}" loading="eager">
+          <span class="tilt-glare"></span>
         </div>
       </div>
     </div>
@@ -882,8 +960,9 @@
     </div>
     <div class="gallery-grid stagger">
       {% for photo in photos %}
-      <div class="gallery-item reveal-scale" onclick="openLightbox(this)">
+      <div class="gallery-item tilt-3d reveal-scale" onclick="openLightbox(this)">
         <img src="{{ photo }}" alt="Foto {{ company_name }}" loading="lazy">
+        <span class="tilt-glare"></span>
       </div>
       {% endfor %}
     </div>
@@ -958,10 +1037,14 @@
         {% if phone != "" %}
         <a href="tel:{{ phone_clean }}" class="contact-btn">📞 Chiama ora</a>
         {% endif %}
+        {% if google_maps_url != "" %}
+        <a href="{{ google_maps_url }}" target="_blank" rel="noopener"
+           style="margin-top:16px;color:#6ee7b7;font-size:14px;text-decoration:none">🗺️ Apri su Google Maps ↗</a>
+        {% endif %}
       </div>
       <div class="contact-map">
         <iframe
-          src="https://www.google.com/maps/embed/v1/place?key={{ google_maps_embed_key }}&q=place_id:{{ google_place_id }}"
+          src="https://maps.google.com/maps?q={{ map_query }}&hl=it&z=15&output=embed"
           loading="lazy"
           referrerpolicy="no-referrer-when-downgrade"
           title="Mappa {{ company_name }}"
@@ -1113,6 +1196,71 @@
         countEl.textContent = countCurrent;
       }, 40);
     }
+  }
+
+  // ── Rispetta prefers-reduced-motion ────────────────────────
+  var reduceMotion = window.matchMedia &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Tilt 3D interattivo sulle immagini ─────────────────────
+  // Solo desktop con puntatore fine (no touch) e se il moto è consentito.
+  var finePointer = window.matchMedia && window.matchMedia('(pointer: fine)').matches;
+  if (!reduceMotion && finePointer) {
+    var MAX_TILT = 14; // gradi
+    document.querySelectorAll('.tilt-3d').forEach(function(card) {
+      card.addEventListener('mousemove', function(e) {
+        var r  = card.getBoundingClientRect();
+        var px = (e.clientX - r.left) / r.width;   // 0..1
+        var py = (e.clientY - r.top) / r.height;   // 0..1
+        var rx = (0.5 - py) * MAX_TILT * 2;
+        var ry = (px - 0.5) * MAX_TILT * 2;
+        card.classList.add('tilting');
+        card.style.transform =
+          'perspective(850px) rotateX(' + rx.toFixed(2) + 'deg) rotateY(' +
+          ry.toFixed(2) + 'deg) scale(1.06)';
+        // Ombra dinamica: si proietta nella direzione opposta all'inclinazione
+        var sx = (0.5 - px) * 36;
+        var sy = (0.5 - py) * 36 + 28;
+        card.style.boxShadow =
+          sx.toFixed(0) + 'px ' + sy.toFixed(0) + 'px 55px rgba(0,0,0,0.32)';
+        card.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+      });
+      card.addEventListener('mouseleave', function() {
+        card.classList.remove('tilting');
+        card.style.transform = '';
+        card.style.boxShadow = '';
+      });
+    });
+  }
+
+  // ── Parallax hero (foto reale) ─────────────────────────────
+  var heroBg = document.querySelector('.hero-photo-bg[data-parallax]');
+  if (heroBg && !reduceMotion) {
+    var hero = heroBg.closest('.hero');
+    var heroContent = hero && hero.querySelector('.hero-content');
+    // Parallax sul movimento del mouse: sfondo e contenuto si muovono in
+    // direzioni opposte → senso di profondità (effetto 3D).
+    if (finePointer && hero) {
+      hero.addEventListener('mousemove', function(e) {
+        var r  = hero.getBoundingClientRect();
+        var dx = ((e.clientX - r.left) / r.width - 0.5) * 24;
+        var dy = ((e.clientY - r.top) / r.height - 0.5) * 24;
+        heroBg.style.transform = 'scale(1.16) translate(' + dx.toFixed(1) + 'px,' + dy.toFixed(1) + 'px)';
+        if (heroContent) {
+          heroContent.style.transform =
+            'translate(' + (-dx * 0.45).toFixed(1) + 'px,' + (-dy * 0.45).toFixed(1) + 'px)';
+        }
+      });
+      hero.addEventListener('mouseleave', function() {
+        if (heroContent) heroContent.style.transform = '';
+      });
+    }
+    // Parallax sullo scroll
+    window.addEventListener('scroll', function() {
+      var offset = window.scrollY * 0.25;
+      heroBg.style.backgroundPosition = 'center calc(50% + ' + offset.toFixed(0) + 'px)';
+    }, { passive: true });
   }
 })();
 

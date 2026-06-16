@@ -78,10 +78,11 @@ module DemoBuilder
         "services"           => @demo.services_list,
         "cta_text"           => @demo.generated_cta.to_s,
 
-        # Foto: prima foto separata per hero about, resto per gallery.
-        # Usa i path locali scaricati al build (preferiti) o gli URL Google (fallback).
-        "first_photo"        => (photo_sources.first || "").to_s,
-        "photos"             => (photo_sources[1..] || []),
+        # Foto (path locali scaricati al build, o URL Google in fallback):
+        #   [0] hero a tutta pagina · [1] sezione "chi siamo" · [2..] galleria
+        "hero_photo"         => (photo_sources[0] || "").to_s,
+        "first_photo"        => (photo_sources[1] || "").to_s,
+        "photos"             => (photo_sources[2..] || []),
 
         # Recensioni: solo quelle con testo e rating ≥ 4
         "reviews"            => best_reviews,
@@ -89,8 +90,9 @@ module DemoBuilder
         # WhatsApp: link diretto con messaggio precomposto
         "whatsapp_url"       => build_whatsapp_url,
 
-        # Google Maps Embed (per iframe nella sezione contatti)
-        "google_maps_embed_key" => ENV.fetch("GOOGLE_PLACES_API_KEY", ""),
+        # Mappa contatti: query per l'embed legacy (?output=embed), key-free —
+        # evita la Maps Embed API e non espone la API key nell'HTML.
+        "map_query"          => map_query,
 
         # Brand & meta
         "brand_name"         => ENV.fetch("BRAND_NAME", "WebRadar"),
@@ -144,6 +146,12 @@ module DemoBuilder
       return "" if @company.google_place_id.blank?
 
       "https://www.google.com/maps/place/?q=place_id:#{@company.google_place_id}"
+    end
+
+    # Query per l'embed mappa legacy (key-free): "Nome, indirizzo, città, prov."
+    def map_query
+      parts = [@company.name, @company.address, @company.city, @company.province].compact_blank
+      ERB::Util.url_encode(parts.join(", "))
     end
 
     # Costruisce URL WhatsApp con messaggio precomposto

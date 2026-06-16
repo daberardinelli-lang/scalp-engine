@@ -42,8 +42,11 @@ class DemoPreviewsController < ApplicationController
 
     # Le foto sono salvate come path relativi (img/photo_N.jpg). In produzione
     # nginx le serve dalla root del subdomain; in preview le riscriviamo in path
-    # assoluti serviti dalla action #image.
-    html = html.gsub('src="img/', %(src="#{demo_preview_path(subdomain)}/img/))
+    # assoluti serviti dalla action #image. Copre sia <img src> sia background-image.
+    base = demo_preview_path(subdomain)
+    html = html
+           .gsub('src="img/', %(src="#{base}/img/))
+           .gsub("url('img/", "url('#{base}/img/")
 
     render html: html.html_safe, layout: false
   rescue => e

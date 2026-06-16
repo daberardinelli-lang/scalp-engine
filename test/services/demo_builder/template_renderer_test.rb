@@ -95,13 +95,14 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
 
   # ─── Test: foto ───────────────────────────────────────────────────────────
 
-  test "usa la prima foto nella sezione about e le restanti nella gallery" do
+  test "usa la prima foto come hero e la seconda nella sezione about" do
     result = DemoBuilder::TemplateRenderer.render(demo: @demo)
 
     assert result.success?
-    # Prima foto: nella sezione about
-    assert result.html.include?("https://example.com/foto1.jpg")
-    # Seconda foto: nella gallery
+    # Prima foto: sfondo hero a tutta pagina
+    assert result.html.include?("hero-photo")
+    assert result.html.include?("background-image:url('https://example.com/foto1.jpg')")
+    # Seconda foto: sezione "chi siamo"
     assert result.html.include?("https://example.com/foto2.jpg")
   end
 
