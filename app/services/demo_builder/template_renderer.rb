@@ -67,6 +67,12 @@ module DemoBuilder
       @photo_sources ||= @photo_paths.nil? ? Array(@company.maps_photo_urls) : @photo_paths
     end
 
+    # URL della clip hero per categoria, "" se non esiste alcun video utilizzabile.
+    def hero_video_url
+      folder = DemoBuilder::CategoryHeroScene.folder_for(@company)
+      folder ? DemoBuilder::CategoryHeroScene.video_url(folder) : ""
+    end
+
     def build_assigns
       {
         # Azienda
@@ -98,6 +104,11 @@ module DemoBuilder
         "hero_photo"         => (photo_sources[0] || "").to_s,
         "first_photo"        => (photo_sources[1] || "").to_s,
         "photos"             => (photo_sources[2..] || []),
+
+        # Hero VIDEO per categoria (clip in /_assets/video/<folder>/hero.mp4).
+        # poster = vera foto Maps del locale (LCP, sempre visibile subito).
+        "hero_video"         => hero_video_url,
+        "hero_video_poster"  => (photo_sources[0] || "").to_s,
 
         # Recensioni: solo quelle con testo e rating ≥ 4
         "reviews"            => best_reviews,

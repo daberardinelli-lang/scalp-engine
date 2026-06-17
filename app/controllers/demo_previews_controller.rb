@@ -6,6 +6,9 @@
 #
 class DemoPreviewsController < ApplicationController
   skip_before_action :authenticate_user!
+  # Serve solo contenuti statici pubblici (HTML/immagini/video demo): nessuna
+  # azione stateful → disabilita CSRF e il blocco cross-origin sugli asset.
+  skip_forgery_protection
 
   def show
     subdomain = params[:subdomain].to_s.strip
@@ -45,7 +48,7 @@ class DemoPreviewsController < ApplicationController
     # assoluti serviti dalla action #image. Copre sia <img src> sia background-image.
     base = demo_preview_path(subdomain)
     html = html
-           .gsub('src="img/', %(src="#{base}/img/))
+           .gsub('="img/', %(="#{base}/img/))      # src="img/..." e poster="img/..."
            .gsub("url('img/", "url('#{base}/img/")
 
     render html: html.html_safe, layout: false
@@ -78,6 +81,37 @@ class DemoPreviewsController < ApplicationController
     send_file path, disposition: "inline"
   rescue => e
     Rails.logger.error "[DemoPreviewsController#image] #{e.message}"
+    head :internal_server_error
+  end
+
+  # Serve gli asset condivisi delle demo (clip video hero, ecc.) in sviluppo.
+  # In produzione: nginx location /_assets/.
+  ASSET_MIME = {
+    ".mp4"  => "video/mp4",
+    ".webm" => "video/webm",
+    ".jpg"  => "image/jpeg",
+    ".jpeg" => "image/jpeg",
+    ".png"  => "image/png",
+    ".webp" => "image/webp"
+  }.freeze
+
+  def asset
+    rel = params[:path].to_s
+
+    # Sicurezza: niente path traversal o path assoluti
+    return head :bad_request if rel.blank? || rel.include?("..") || rel.start_with?("/")
+
+    assets_root = File.expand_path(File.join(DemoBuilder::CategoryHeroScene.storage_base, "_assets"))
+    path        = File.expand_path(File.join(assets_root, rel))
+
+    unless path.start_with?(assets_root + File::SEPARATOR) && File.file?(path)
+      return head :not_found
+    end
+
+    type = ASSET_MIME[File.extname(path).downcase] || "application/octet-stream"
+    send_file path, type: type, disposition: "inline"
+  rescue => e
+    Rails.logger.error "[DemoPreviewsController#asset] #{e.message}"
     head :internal_server_error
   end
 end

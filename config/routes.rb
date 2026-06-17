@@ -55,6 +55,11 @@ Rails.application.routes.draw do
     end
   end
 
+  # Asset condivisi delle demo in sviluppo (clip video hero, ecc.).
+  # In produzione: nginx location /_assets/ sul vhost *.demo.webradar.it
+  get "/_assets/*path", to: "demo_previews#asset", as: :demo_asset,
+      constraints: { path: %r{[\w\-./]+} }, format: false
+
   # Immagini statiche delle demo in sviluppo (in produzione: nginx wildcard subdomain)
   get "/demos/:subdomain/img/:filename", to: "demo_previews#image", as: :demo_preview_image,
       constraints: { subdomain: /[a-z0-9\-]+/, filename: /[a-zA-Z0-9_\-]+\.(jpe?g|png|webp)/ },

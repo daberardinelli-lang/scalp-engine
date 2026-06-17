@@ -1,5 +1,6 @@
 # test/services/demo_builder/template_renderer_test.rb
 require "test_helper"
+require "tmpdir"
 
 class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
   setup do
@@ -177,6 +178,46 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
   end
 
   # ─── Test: foto ───────────────────────────────────────────────────────────
+
+  # ─── Test: hero video per categoria ───────────────────────────────────────
+
+  test "usa l'hero VIDEO quando esiste la clip per la categoria" do
+    Dir.mktmpdir do |tmp|
+      orig = ENV["DEMO_STORAGE_PATH"]
+      ENV["DEMO_STORAGE_PATH"] = tmp
+      begin
+        dir = File.join(tmp, "_assets", "video", "ristorante")
+        FileUtils.mkdir_p(dir)
+        File.write(File.join(dir, "hero.mp4"), "")
+
+        result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+        assert result.success?, result.errors.inspect
+        assert result.html.include?('class="hero hero-video"'), "usa l'hero video"
+        assert result.html.include?('src="/_assets/video/ristorante/hero.mp4"')
+        assert result.html.include?('class="hero-clip"')
+        assert result.html.include?("data-hero-video")
+      ensure
+        ENV["DEMO_STORAGE_PATH"] = orig
+      end
+    end
+  end
+
+  test "fallback all'hero foto quando non c'è clip video" do
+    Dir.mktmpdir do |tmp|   # storage vuoto → nessun video
+      orig = ENV["DEMO_STORAGE_PATH"]
+      ENV["DEMO_STORAGE_PATH"] = tmp
+      begin
+        result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+        assert result.success?
+        refute result.html.include?('class="hero hero-video"'), "niente hero video senza clip"
+        assert result.html.include?('class="hero hero-photo"'), "ripiega sull'hero foto"
+      ensure
+        ENV["DEMO_STORAGE_PATH"] = orig
+      end
+    end
+  end
 
   test "usa la prima foto come hero e la seconda nella sezione about" do
     result = DemoBuilder::TemplateRenderer.render(demo: @demo)
