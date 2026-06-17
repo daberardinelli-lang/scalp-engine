@@ -309,11 +309,14 @@
     }
 
     /* ── Hero VIDEO per categoria ─────────────────────────────── */
+    /* Solo video: niente foto Maps sotto. Sfondo brand scuro mentre carica. */
     .hero-video { position: relative; overflow: hidden; min-height: 86vh; background: #07140e; }
     .hero-clip {
       position: absolute; inset: 0; width: 100%; height: 100%;
       object-fit: cover; z-index: 1;
+      opacity: 0; transition: opacity 0.6s ease;   /* entra in dissolvenza sullo sfondo scuro */
     }
+    .hero-clip.is-playing { opacity: 1; }
     .hero-vscrim {
       position: absolute; inset: 0; z-index: 2;
       background:
@@ -886,8 +889,7 @@
 <!-- Hero -->
 <section class="hero{% if hero_video != "" %} hero-video{% elsif hero_photo != "" %} hero-photo{% endif %}">
   {% if hero_video != "" %}
-  <video class="hero-clip" autoplay muted loop playsinline preload="none"
-         poster="{{ hero_video_poster }}" data-hero-video>
+  <video class="hero-clip" autoplay muted loop playsinline preload="none" data-hero-video>
     <source src="{{ hero_video }}" type="video/mp4">
   </video>
   <div class="hero-vscrim"></div>
@@ -1197,8 +1199,12 @@
       try { heroVideo.pause(); } catch (e) {}
       while (heroVideo.firstChild) { heroVideo.removeChild(heroVideo.firstChild); }
       heroVideo.removeAttribute('src');
-      try { heroVideo.load(); } catch (e) {} // resetta → mostra il poster, niente download
+      try { heroVideo.load(); } catch (e) {} // resetta → resta il poster, niente download
     } else {
+      // Dissolvenza morbida: il video entra sul poster solo quando è pronto
+      heroVideo.addEventListener('playing', function () {
+        heroVideo.classList.add('is-playing');
+      }, { once: true });
       var pp = heroVideo.play && heroVideo.play();
       if (pp && pp.catch) { pp.catch(function () {}); }
     }

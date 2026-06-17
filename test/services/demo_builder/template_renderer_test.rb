@@ -4,6 +4,11 @@ require "tmpdir"
 
 class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
   setup do
+    # Isola lo storage: nessuna clip video di default → l'hero usa la foto.
+    # (i test dell'hero video creano da sé una clip in un tmp dedicato)
+    @orig_storage = ENV["DEMO_STORAGE_PATH"]
+    ENV["DEMO_STORAGE_PATH"] = Dir.mktmpdir("webradar_renderer_test_")
+
     @company = FactoryBot.create(:company,
                                  name:               "Trattoria Bella Napoli",
                                  city:               "Napoli",
@@ -28,6 +33,12 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
                               generated_about:     "Da tre generazioni portiamo in tavola la tradizione culinaria partenopea.",
                               generated_services:  JSON.generate(["Pizza al forno a legna", "Antipasti", "Dolci tipici"]),
                               generated_cta:       "Prenota il tuo tavolo")
+  end
+
+  teardown do
+    tmp = ENV["DEMO_STORAGE_PATH"]
+    ENV["DEMO_STORAGE_PATH"] = @orig_storage
+    FileUtils.rm_rf(tmp) if tmp.to_s.include?("webradar_renderer_test_")
   end
 
   # ─── Test: rendering base ─────────────────────────────────────────────────
