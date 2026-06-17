@@ -31,6 +31,13 @@ class DemoBuildJob < ApplicationJob
       return
     end
 
+    # Rinfresca gli URL foto Google (scadono nel tempo) sullo stesso oggetto
+    # company che leggerà PhotoDownloader, poi scaricale in locale.
+    refresh = Discovery::PhotoRefresher.call(company: demo.company)
+    if refresh.error
+      Rails.logger.warn "[DemoBuildJob] #{company.name}: refresh foto non riuscito — #{refresh.error}"
+    end
+
     # Scarica le foto Google in locale: gli URL Google scadono ed espongono la API key
     photo_result = DemoBuilder::PhotoDownloader.call(demo: demo)
     if photo_result.errors.any?
