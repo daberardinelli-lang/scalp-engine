@@ -450,53 +450,46 @@
     .services-section { background: #fff }
     .services-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 24px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
     }
     .service-card {
-      background: linear-gradient(145deg, #f0fdf4, #ecfdf5);
-      border: 1px solid #bbf7d0;
-      border-radius: 20px;
-      padding: 36px 24px 32px;
-      text-align: center;
-      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
-                  box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      background: #fafdfb;
+      border: 1px solid #e6efe9;
+      border-radius: 14px;
+      padding: 24px 22px;
+      text-align: left;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                  box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                  border-color 0.3s;
       cursor: default;
-      position: relative;
-      overflow: hidden;
     }
-    .service-card::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, transparent 40%, rgba(16,185,129,0.08));
-      opacity: 0;
-      transition: opacity 0.4s;
-    }
-    .service-card:hover::before { opacity: 1 }
     .service-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px rgba(15,76,53,0.12);
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(15,76,53,0.08);
+      border-color: #cfe6d8;
     }
     .service-icon {
-      width: 56px;
-      height: 56px;
-      margin: 0 auto 16px;
-      background: linear-gradient(135deg, #0f4c35, #16a34a);
-      border-radius: 16px;
+      width: 40px;
+      height: 40px;
+      margin: 0 0 14px;
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      color: #fff;
-      box-shadow: 0 4px 12px rgba(15,76,53,0.25);
+      justify-content: flex-start;
+      color: #16a34a;
     }
+    .service-icon svg { width: 28px; height: 28px; }
     .service-name {
-      font-weight: 600;
-      font-size: 15px;
-      color: #065f46;
-      line-height: 1.4;
-      position: relative;
+      font-weight: 700;
+      font-size: 16px;
+      color: #0f4c35;
+      line-height: 1.35;
+    }
+    .service-desc {
+      margin-top: 6px;
+      font-size: 14px;
+      color: #5b6b62;
+      line-height: 1.6;
     }
 
     /* ── Gallery ───────────────────────────────────────────────── */
@@ -825,8 +818,8 @@
       .contact-box { padding: 40px 28px }
       .section { padding: 56px 0 }
       .section-title { font-size: 28px }
-      .services-grid { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px }
-      .service-card { padding: 28px 16px 24px }
+      .services-grid { grid-template-columns: repeat(2, 1fr); gap: 14px }
+      .service-card { padding: 20px 18px }
       .reviews-grid { grid-template-columns: 1fr }
       .gallery-grid { grid-template-columns: 1fr 1fr; gap: 10px }
       .gallery-item img { height: 180px }
@@ -834,6 +827,9 @@
       .whatsapp-tooltip { display: none }
       .hero-rating-box { padding: 12px 18px }
       .hero-rating-number { font-size: 34px }
+    }
+    @media (max-width: 480px) {
+      .services-grid { grid-template-columns: 1fr }
     }
   </style>
 </head>
@@ -935,8 +931,9 @@
     <div class="services-grid stagger">
       {% for service in services %}
       <div class="service-card reveal-scale">
-        <div class="service-icon">✦</div>
-        <div class="service-name">{{ service }}</div>
+        <div class="service-icon">{{ service.icon }}</div>
+        <div class="service-name">{{ service.name }}</div>
+        {% if service.desc != blank %}<p class="service-desc">{{ service.desc }}</p>{% endif %}
       </div>
       {% endfor %}
     </div>

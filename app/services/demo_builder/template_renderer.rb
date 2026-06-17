@@ -48,6 +48,18 @@ module DemoBuilder
 
     private
 
+    # Trasforma la lista servizi (array di stringhe) in array di hash con icona SVG
+    # pertinente, scelta dalle keyword del testo. Liquid accede a service.name /
+    # service.icon. L'SVG NON viene escapato da Liquid → renderizzato inline.
+    def services_with_icons
+      Array(@demo.services_list).map do |service|
+        {
+          "name" => service.to_s,
+          "icon" => DemoBuilder::ServiceIcons.icon_for(service)
+        }
+      end
+    end
+
     # Sorgenti foto: path locali scaricati (preferiti) o URL Google (fallback legacy).
     # nil = non fornito → usa maps_photo_urls; [] = download fallito → nessuna foto.
     def photo_sources
@@ -75,7 +87,7 @@ module DemoBuilder
         # Contenuto AI
         "headline"           => @demo.generated_headline.to_s,
         "about"              => @demo.generated_about.to_s,
-        "services"           => @demo.services_list,
+        "services"           => services_with_icons,
         "cta_text"           => @demo.generated_cta.to_s,
 
         # Foto (path locali scaricati al build, o URL Google in fallback):
