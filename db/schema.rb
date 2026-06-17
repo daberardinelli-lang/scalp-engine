@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_20_200001) do
+ActiveRecord::Schema[8.1].define(version: 2026_06_17_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -60,6 +60,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_200001) do
     t.jsonb "reviews_data", default: []
     t.string "status", default: "discovered", null: false
     t.datetime "updated_at", null: false
+    t.string "website"
     t.index ["campaign_id"], name: "index_companies_on_campaign_id"
     t.index ["category"], name: "index_companies_on_category"
     t.index ["discarded_at"], name: "index_companies_on_discarded_at"
@@ -79,6 +80,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_20_200001) do
     t.text "generated_cta"
     t.text "generated_headline"
     t.text "generated_services"
+    t.text "generated_services_intro"
+    t.string "generated_services_title"
     t.string "html_path"
     t.datetime "last_viewed_at"
     t.string "subdomain", null: false

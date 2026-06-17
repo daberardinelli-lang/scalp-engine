@@ -52,10 +52,11 @@ module DemoBuilder
     # pertinente, scelta dalle keyword del testo. Liquid accede a service.name /
     # service.icon. L'SVG NON viene escapato da Liquid → renderizzato inline.
     def services_with_icons
-      Array(@demo.services_list).map do |service|
+      @demo.services_detailed.map do |service|
         {
-          "name" => service.to_s,
-          "icon" => DemoBuilder::ServiceIcons.icon_for(service)
+          "name" => service["name"].to_s,
+          "icon" => DemoBuilder::ServiceIcons.icon_for(service["name"]),
+          "desc" => service["desc"].to_s
         }
       end
     end
@@ -88,6 +89,8 @@ module DemoBuilder
         "headline"           => @demo.generated_headline.to_s,
         "about"              => @demo.generated_about.to_s,
         "services"           => services_with_icons,
+        "services_title"     => @demo.generated_services_title.to_s,
+        "services_intro"     => @demo.generated_services_intro.to_s,
         "cta_text"           => @demo.generated_cta.to_s,
 
         # Foto (path locali scaricati al build, o URL Google in fallback):

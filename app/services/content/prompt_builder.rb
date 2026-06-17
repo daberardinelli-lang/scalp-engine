@@ -65,9 +65,16 @@ module Content
       sections << ""
       sections << "## Istruzione"
       sections << "Genera i contenuti per la landing page dimostrativa di questa " \
-                  "#{category_label.downcase} italiana. " \
-                  "Il tono deve essere professionale, caldo e in italiano. " \
-                  "Usa i dati reali per rendere i contenuti specifici e credibili."
+                  "#{category_label.downcase} italiana, in italiano, con tono " \
+                  "professionale e caldo."
+      sections << "Ogni testo (headline, about, services_title, services_intro e ogni " \
+                  "desc dei servizi) DEVE citare un dettaglio reale ricavato dai dati " \
+                  "qui sopra o dalle recensioni: un piatto, un prodotto, un materiale, " \
+                  "la zona/quartiere, un'esperienza concreta."
+      sections << "VIETATE le frasi di riempimento generiche e i superlativi a vuoto " \
+                  "(es. \"Tutto quello che serve per soddisfare le tue esigenze\", " \
+                  "\"Qualità e professionalità garantite\", \"il meglio per te\"). " \
+                  "Se manca un dettaglio reale, resta fattuale e sobrio, mai generico."
 
       sections.join("\n")
     end

@@ -26,27 +26,37 @@ module Content
     # Prompt di sistema: istruisce Claude a rispondere SOLO con JSON valido
     SYSTEM_PROMPT = <<~SYSTEM.strip
       Sei un esperto copywriter italiano specializzato in siti web per PMI locali.
-      Il tuo compito è generare contenuti professionali, autentici e coinvolgenti
-      per una landing page dimostrativa di un'attività italiana.
+      Il tuo compito è generare contenuti concreti e credibili per una landing page
+      dimostrativa di un'attività italiana, basandoti SOLO sui dati reali forniti.
 
       Rispondi ESCLUSIVAMENTE con un oggetto JSON valido, senza markdown,
       senza delimitatori di codice, senza testo prima o dopo il JSON.
 
-      Il JSON deve avere ESATTAMENTE questi quattro campi:
+      Il JSON deve avere ESATTAMENTE questi campi:
       {
-        "headline": "string — titolo principale della pagina (max 80 caratteri, italiano)",
-        "about": "string — paragrafo descrittivo dell'attività (150-250 parole, italiano)",
-        "services": ["array di 4-6 stringhe — servizi o prodotti tipici dell'attività"],
-        "cta": "string — call to action per il pulsante principale (max 50 caratteri, italiano)"
+        "headline": "string — titolo principale (max 80 caratteri, italiano)",
+        "about": "string — paragrafo descrittivo (150-250 parole, italiano)",
+        "services_title": "string — titolo della sezione servizi, max 5 parole, specifico (es. 'La cucina del territorio', NON 'Cosa offriamo')",
+        "services_intro": "string — UNA frase che cita qualcosa di reale dell'attività (un piatto, un prodotto, la zona). NIENTE frasi generiche.",
+        "services": [
+          { "name": "string — nome breve del servizio/prodotto", "desc": "string — UNA frase concreta, cita un dettaglio reale, senza superlativi" }
+        ],
+        "cta": "string — call to action per il pulsante (max 50 caratteri, italiano)"
       }
+      "services" deve contenere 4-6 oggetti.
 
       Regole:
-      - Usa un tono professionale ma caldo, tipico delle PMI italiane
-      - Rendi i contenuti specifici all'attività, non generici
-      - L'headline deve catturare l'attenzione e includere il nome o la città
-      - L'about deve citare punti di forza reali (qualità, esperienza, territorio)
-      - I servizi devono essere realistici per la categoria indicata
-      - Il CTA deve invitare all'azione (chiamare, visitare, contattare)
+      - Tono professionale ma caldo, tipico delle PMI italiane.
+      - Ogni testo DEVE citare un dettaglio reale ricavato dai dati o dalle recensioni
+        (un piatto, un prodotto, un materiale, la zona/quartiere, un'esperienza concreta).
+      - L'headline include il nome dell'attività o la città.
+      - Nelle desc dei servizi NIENTE superlativi a vuoto.
+
+      VIETATO usare frasi di riempimento generiche, tra cui (a titolo d'esempio):
+      "Tutto quello che serve per soddisfare le tue esigenze",
+      "Qualità e professionalità garantite", "il meglio per te",
+      "la migliore esperienza", "soluzioni su misura per ogni esigenza".
+      Se non hai un dettaglio reale da citare, sii fattuale e sobrio, MAI generico.
     SYSTEM
 
     Result = Struct.new(:demo, :errors, keyword_init: true) do
@@ -112,8 +122,11 @@ module Content
     def call_claude_api(prompt)
       body = {
         model:      MODEL,
-        max_tokens: 2048,
-        thinking:   { type: "adaptive" },
+        max_tokens: 4096,
+        # Niente extended thinking: è un task di copywriting strutturato (JSON).
+        # Con thinking adattivo il modello esauriva max_tokens nel ragionamento
+        # senza produrre il blocco di testo.
+        thinking:   { type: "disabled" },
         system:     SYSTEM_PROMPT,
         messages:   [{ role: "user", content: prompt }]
       }
@@ -180,11 +193,13 @@ module Content
       demo.subdomain = generate_subdomain if demo.new_record? || demo.subdomain.blank?
 
       demo.assign_attributes(
-        generated_headline: content["headline"],
-        generated_about:    content["about"],
-        generated_services: JSON.generate(content["services"]),
-        generated_cta:      content["cta"],
-        expires_at:         30.days.from_now
+        generated_headline:       content["headline"],
+        generated_about:          content["about"],
+        generated_services:       JSON.generate(content["services"]),
+        generated_services_title: content["services_title"],
+        generated_services_intro: content["services_intro"],
+        generated_cta:            content["cta"],
+        expires_at:               30.days.from_now
       )
 
       unless demo.save

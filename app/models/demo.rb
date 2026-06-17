@@ -32,18 +32,38 @@ class Demo < ApplicationRecord
     )
   end
 
-  # Deserializza i servizi generati (colonna text JSON-encoded)
+  # Servizi normalizzati ad array di hash {"name", "desc"}.
+  # `generated_services` può contenere due formati:
+  #   - nuovo:  [{"name": "...", "desc": "..."}, ...]
+  #   - vecchio: ["nome1", "nome2", ...]  (demo precedenti → desc vuota)
+  def services_detailed
+    parse_generated_services.map do |s|
+      if s.is_a?(Hash)
+        { "name" => s["name"].to_s, "desc" => s["desc"].to_s }
+      else
+        { "name" => s.to_s, "desc" => "" }
+      end
+    end
+  end
+
+  # Solo i nomi dei servizi (retrocompat: viste admin, ecc.)
   def services_list
+    services_detailed.map { |s| s["name"] }
+  end
+
+  def content_generated?
+    generated_headline.present? && generated_about.present?
+  end
+
+  # Parsa `generated_services` (text JSON) in array grezzo (hash o stringhe).
+  def parse_generated_services
     return [] if generated_services.blank?
     parsed = JSON.parse(generated_services)
     parsed.is_a?(Array) ? parsed : [generated_services]
   rescue JSON::ParserError
     [generated_services]
   end
-
-  def content_generated?
-    generated_headline.present? && generated_about.present?
-  end
+  private :parse_generated_services
 
   # Genera lo slug dal nome azienda
   def self.slugify(name)

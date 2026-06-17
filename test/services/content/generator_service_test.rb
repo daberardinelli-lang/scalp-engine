@@ -5,11 +5,18 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
   # ─── JSON di risposta Claude simulato ─────────────────────────────────────
 
   VALID_CONTENT = {
-    "headline"  => "Ristorante Bella Italia — Il gusto autentico di Prato",
-    "about"     => "Da oltre 30 anni portiamo in tavola la tradizione culinaria toscana. " \
-                   "I nostri piatti sono preparati con ingredienti locali selezionati con cura.",
-    "services"  => %w[Pranzo\ di\ lavoro Cena\ romantica Banchetti Pizza\ artigianale],
-    "cta"       => "Prenota il tuo tavolo"
+    "headline"       => "Ristorante Bella Italia — Il gusto autentico di Prato",
+    "about"          => "Da oltre 30 anni portiamo in tavola la tradizione culinaria toscana. " \
+                        "I nostri piatti sono preparati con ingredienti locali selezionati con cura.",
+    "services_title" => "La cucina toscana di Prato",
+    "services_intro" => "Pici tirati a mano e bistecca alla fiorentina serviti in centro a Prato.",
+    "services"       => [
+      { "name" => "Pici fatti in casa",       "desc" => "Pasta fresca tirata a mano ogni mattina." },
+      { "name" => "Bistecca alla fiorentina", "desc" => "Carne chianina cotta sulla brace." },
+      { "name" => "Cantina toscana",          "desc" => "Etichette del Chianti e del Carmignano." },
+      { "name" => "Banchetti",                "desc" => "Sale per cerimonie fino a 80 coperti." }
+    ],
+    "cta"            => "Prenota il tuo tavolo"
   }.freeze
 
   CLAUDE_SUCCESS_BODY = JSON.generate({
@@ -54,7 +61,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
   # ─── Test: flusso happy path ──────────────────────────────────────────────
 
   test "genera contenuti e crea Demo con status demo_built" do
-    client = build_test_client { |stub| stub.post { [200, {}, CLAUDE_SUCCESS_BODY] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, CLAUDE_SUCCESS_BODY] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -62,10 +69,15 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
     assert_not_nil result.demo
 
     demo = result.demo
-    assert_equal VALID_CONTENT["headline"], demo.generated_headline
-    assert_equal VALID_CONTENT["about"],    demo.generated_about
-    assert_equal VALID_CONTENT["cta"],      demo.generated_cta
-    assert_equal VALID_CONTENT["services"], demo.services_list
+    assert_equal VALID_CONTENT["headline"],       demo.generated_headline
+    assert_equal VALID_CONTENT["about"],          demo.generated_about
+    assert_equal VALID_CONTENT["cta"],            demo.generated_cta
+    assert_equal VALID_CONTENT["services_title"], demo.generated_services_title
+    assert_equal VALID_CONTENT["services_intro"], demo.generated_services_intro
+    # services_list = solo i nomi; services_detailed = nome + desc
+    assert_equal ["Pici fatti in casa", "Bistecca alla fiorentina", "Cantina toscana", "Banchetti"],
+                 demo.services_list
+    assert_equal VALID_CONTENT["services"], demo.services_detailed
     assert_not_nil demo.subdomain
     assert demo.expires_at > Time.current
 
@@ -75,7 +87,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
 
   test "aggiorna demo esistente se la company ha già un demo" do
     existing_demo = FactoryBot.create(:demo, company: @company, subdomain: "bella-italia-prato-abc123")
-    client = build_test_client { |stub| stub.post { [200, {}, CLAUDE_SUCCESS_BODY] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, CLAUDE_SUCCESS_BODY] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -90,7 +102,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
 
   test "ritorna errore se Claude risponde con status non 200" do
     error_body = JSON.generate({ "error" => { "message" => "Rate limit exceeded" } })
-    client = build_test_client { |stub| stub.post { [429, {}, error_body] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [429, {}, error_body] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -99,7 +111,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
   end
 
   test "ritorna errore HTTP se Faraday solleva eccezione" do
-    client = build_test_client { |stub| stub.post { raise Faraday::ConnectionFailed, "Connection refused" } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { raise Faraday::ConnectionFailed, "Connection refused" } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -110,7 +122,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
   # ─── Test: parsing risposta ───────────────────────────────────────────────
 
   test "ritorna errore se risposta manca di campi richiesti" do
-    client = build_test_client { |stub| stub.post { [200, {}, CLAUDE_MISSING_FIELDS_BODY] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, CLAUDE_MISSING_FIELDS_BODY] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -119,7 +131,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
   end
 
   test "ritorna errore se risposta non è JSON valido" do
-    client = build_test_client { |stub| stub.post { [200, {}, CLAUDE_INVALID_JSON_BODY] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, CLAUDE_INVALID_JSON_BODY] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -128,7 +140,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
   end
 
   test "ritorna errore se non c'è blocco text nella risposta" do
-    client = build_test_client { |stub| stub.post { [200, {}, CLAUDE_NO_TEXT_BLOCK_BODY] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, CLAUDE_NO_TEXT_BLOCK_BODY] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -142,7 +154,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
         { "type" => "text", "text" => "```json\n#{JSON.generate(VALID_CONTENT)}\n```" }
       ]
     })
-    client = build_test_client { |stub| stub.post { [200, {}, body_with_markdown] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, body_with_markdown] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -153,7 +165,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
 
   test "skip se company non è in stato enriched o demo_built" do
     @company.update_column(:status, "discovered")
-    client = build_test_client { |stub| stub.post { [200, {}, CLAUDE_SUCCESS_BODY] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, CLAUDE_SUCCESS_BODY] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -163,7 +175,7 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
 
   test "skip se company ha fatto opt-out" do
     @company.update_column(:opted_out_at, Time.current)
-    client = build_test_client { |stub| stub.post { [200, {}, CLAUDE_SUCCESS_BODY] } }
+    client = build_test_client { |stub| stub.post("/v1/messages") { [200, {}, CLAUDE_SUCCESS_BODY] } }
 
     result = Content::GeneratorService.call(company: @company, http_client: client)
 
@@ -181,6 +193,17 @@ class Content::GeneratorServiceTest < ActiveSupport::TestCase
   test "Demo#services_list ritorna array vuoto se blank" do
     demo = Demo.new(generated_services: nil)
     assert_equal [], demo.services_list
+  end
+
+  test "Demo#services_detailed normalizza il formato vecchio (stringhe → desc vuota)" do
+    demo = Demo.new(generated_services: JSON.generate(["Pizza", "Pasta"]))
+    assert_equal [{ "name" => "Pizza", "desc" => "" }, { "name" => "Pasta", "desc" => "" }],
+                 demo.services_detailed
+  end
+
+  test "Demo#services_detailed legge il formato nuovo {name, desc}" do
+    demo = Demo.new(generated_services: JSON.generate([{ "name" => "Pici", "desc" => "Fatti a mano." }]))
+    assert_equal [{ "name" => "Pici", "desc" => "Fatti a mano." }], demo.services_detailed
   end
 
   test "Demo#content_generated? ritorna true se headline e about presenti" do

@@ -71,6 +71,49 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
     assert result.html.include?("Dolci tipici")
   end
 
+  test "usa services_title e services_intro generati, senza copy generico" do
+    @demo.update!(generated_services_title: "La cucina del lago",
+                  generated_services_intro: "Pesce di lago e vini umbri a Piediluco.")
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+    assert result.success?
+    assert result.html.include?("La cucina del lago")
+    assert result.html.include?("Pesce di lago e vini umbri a Piediluco.")
+    refute result.html.include?("Cosa offriamo"), "niente titolo fisso"
+    refute result.html.include?("Tutto quello che serve"), "niente sottotitolo generico"
+  end
+
+  test "fallback titolo 'I nostri servizi' e nessun sottotitolo se title/intro vuoti" do
+    @demo.update!(generated_services_title: nil, generated_services_intro: nil)
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+    assert result.success?
+    assert result.html.include?("I nostri servizi")
+    refute result.html.include?("Tutto quello che serve")
+  end
+
+  test "mostra service-desc se presente e la omette se vuota" do
+    @demo.update!(generated_services: JSON.generate([
+      { "name" => "Pici fatti in casa", "desc" => "Pasta tirata a mano ogni giorno." },
+      { "name" => "Banchetti",          "desc" => "" }
+    ]))
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+    assert result.success?
+    assert result.html.include?("Pasta tirata a mano ogni giorno.")
+    assert result.html.include?('class="service-desc"')
+    refute result.html.include?('<p class="service-desc"></p>'), "niente paragrafo desc vuoto"
+  end
+
+  test "renderizza una griglia di 6 servizi" do
+    six = (1..6).map { |i| { "name" => "Servizio #{i}", "desc" => "Dettaglio concreto #{i}." } }
+    @demo.update!(generated_services: JSON.generate(six))
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+    assert result.success?
+    assert_equal 6, result.html.scan('class="service-card').size
+  end
+
   test "include il link Google Maps se google_place_id presente" do
     result = DemoBuilder::TemplateRenderer.render(demo: @demo)
 

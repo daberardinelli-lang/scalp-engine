@@ -925,8 +925,8 @@
   <div class="container">
     <div class="reveal">
       <div class="section-eyebrow">Servizi</div>
-      <h2 class="section-title">Cosa offriamo</h2>
-      <p class="section-sub">Tutto quello che serve per soddisfare le tue esigenze</p>
+      <h2 class="section-title">{% if services_title != "" %}{{ services_title }}{% else %}I nostri servizi{% endif %}</h2>
+      {% if services_intro != "" %}<p class="section-sub">{{ services_intro }}</p>{% endif %}
     </div>
     <div class="services-grid stagger">
       {% for service in services %}
