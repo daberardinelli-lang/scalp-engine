@@ -73,4 +73,31 @@ class Outreach::MailgunServiceTest < ActiveSupport::TestCase
   ensure
     ENV["MAILGUN_DOMAIN"] = original
   end
+
+  # ─── Test: switch dev → MailHog ───────────────────────────────────────────
+
+  test "mailgun_configured? vero solo con key e dominio valorizzati" do
+    svc = Outreach::MailgunService.new
+    with_env("MAILGUN_API_KEY" => "key-x", "MAILGUN_DOMAIN" => "mg.test.it") do
+      assert svc.send(:mailgun_configured?)
+    end
+    with_env("MAILGUN_API_KEY" => "", "MAILGUN_DOMAIN" => "") do
+      refute svc.send(:mailgun_configured?)
+    end
+  end
+
+  test "use_mailhog? è false quando un client è iniettato (test/prod usano Mailgun)" do
+    svc = Outreach::MailgunService.new(mg_client: fake_mg_client)
+    refute svc.send(:use_mailhog?)
+  end
+
+  private
+
+  def with_env(vars)
+    original = {}
+    vars.each { |k, v| original[k] = ENV[k]; ENV[k] = v }
+    yield
+  ensure
+    original.each { |k, v| v.nil? ? ENV.delete(k) : ENV[k] = v }
+  end
 end

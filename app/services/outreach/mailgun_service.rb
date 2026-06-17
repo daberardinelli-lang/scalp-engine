@@ -26,6 +26,15 @@ module Outreach
     end
 
     def send_email(to:, subject:, html:, from: nil, tracking_token: nil)
+      # In sviluppo, se Mailgun non è configurato, consegna a MailHog.
+      # (saltato se un client è iniettato, es. nei test, o in produzione)
+      if use_mailhog?
+        Rails.logger.info "[MailgunService] Mailgun non configurato in dev → uso MailHog"
+        return Outreach::MailhogService.send_email(
+          to: to, subject: subject, html: html, from: from, tracking_token: tracking_token
+        )
+      end
+
       client       = @mg_client || build_client
       from_address = from || default_from
 
@@ -59,6 +68,16 @@ module Outreach
     end
 
     private
+
+    # Fallback a MailHog: solo in sviluppo, senza client iniettato e con
+    # Mailgun non configurato (chiave o dominio vuoti).
+    def use_mailhog?
+      @mg_client.nil? && Rails.env.development? && !mailgun_configured?
+    end
+
+    def mailgun_configured?
+      ENV["MAILGUN_API_KEY"].present? && ENV["MAILGUN_DOMAIN"].present?
+    end
 
     def build_client
       Mailgun::Client.new(ENV.fetch("MAILGUN_API_KEY"))
