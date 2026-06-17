@@ -122,6 +122,46 @@ class DemoBuilder::TemplateRendererTest < ActiveSupport::TestCase
     assert result.html.include?("google.com/maps")
   end
 
+  # ─── Test: sezione Contatti (full-bleed + scheda glass) ───────────────────
+
+  test "contatti: mappa full-bleed + scheda glass quando place_id presente" do
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+    assert result.success?
+    assert result.html.include?('class="contact-stage'), "stage full-bleed"
+    assert result.html.include?('class="contact-map-bg"'), "mappa di sfondo"
+    assert result.html.include?("output=embed"), "embed key-free, niente Maps Embed API"
+    refute result.html.include?("maps/embed/v1/place"), "niente Maps Embed API"
+    assert result.html.include?('class="contact-card'), "scheda flottante"
+    assert result.html.include?('class="contact-pill"'), "pill brand"
+    assert result.html.include?("Vieni a trovarci"), "titolo editoriale"
+    assert result.html.include?('href="tel:+390811234567"'), "telefono cliccabile"
+    assert result.html.include?("wa.me/39"), "bottone WhatsApp (phone presente → wa url)"
+    refute result.html.include?('class="contact-wrapper"'), "vecchio layout rimosso"
+  end
+
+  test "contatti: fallback centrato senza iframe se google_place_id vuoto" do
+    @company.update_column(:google_place_id, nil)
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+    assert result.success?, result.errors.inspect
+    assert result.html.include?("contact-stage-nomap"), "stage senza mappa"
+    assert result.html.include?("contact-card-center"), "scheda centrata"
+    refute result.html.include?("<iframe"), "nessun iframe mappa"
+    assert result.html.include?("Vieni a trovarci")
+  end
+
+  test "contatti: render ok senza telefono (niente tel: né pulsante chiama)" do
+    @company.update_column(:phone, nil)
+    result = DemoBuilder::TemplateRenderer.render(demo: @demo)
+
+    assert result.success?, result.errors.inspect
+    refute result.html.include?("tel:"), "nessun link telefono"
+    refute result.html.include?("Chiama ora"), "nessuna CTA chiama"
+    refute result.html.include?("wa.me"), "niente WhatsApp senza telefono"
+    assert result.html.include?('class="contact-card'), "la scheda è comunque renderizzata"
+  end
+
   test "include il banner 'sito demo'" do
     result = DemoBuilder::TemplateRenderer.render(demo: @demo)
 

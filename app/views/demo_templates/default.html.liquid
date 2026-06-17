@@ -623,105 +623,109 @@
       background: #16a34a;
     }
 
-    /* ── Contact ───────────────────────────────────────────────── */
-    .contact-wrapper {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 0;
-      border-radius: 24px;
+    /* ── Contact (full-bleed map + scheda flottante glass) ─────── */
+    .contact-stage {
+      position: relative;
+      min-height: 600px;
+      display: flex;
+      align-items: flex-end;       /* scheda ancorata in basso */
+      justify-content: flex-start; /* ...a sinistra (asimmetria voluta) */
+      padding: 56px;
       overflow: hidden;
-      box-shadow: 0 24px 64px rgba(0,0,0,0.15);
-      max-width: 1000px;
-      margin: 0 auto;
     }
-    .contact-box {
-      background: linear-gradient(160deg, #0f4c35, #065f46, #047857);
+    .contact-map-bg { position: absolute; inset: 0; z-index: 1; background: #e5e7eb; }
+    .contact-map-bg iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .contact-overlay {
+      position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background:
+        linear-gradient(to top, rgba(7,20,14,0.92) 0%, rgba(7,20,14,0.55) 28%, rgba(7,20,14,0) 58%),
+        linear-gradient(to right, rgba(15,76,53,0.5) 0%, rgba(15,76,53,0) 55%);
+    }
+    /* Blob brand diffuso dietro la scheda (accento non-standard) */
+    .contact-accent {
+      position: absolute; z-index: 2; bottom: 3%; left: 3%;
+      width: 320px; height: 320px; border-radius: 50%;
+      background: radial-gradient(circle, #16a34a, #0f4c35 70%);
+      filter: blur(80px); opacity: 0.5; pointer-events: none;
+    }
+    .contact-card {
+      position: relative; z-index: 3;
+      width: 40%; min-width: 340px; max-width: 480px;
+      background: rgba(8,28,20,0.6);
+      backdrop-filter: blur(20px) saturate(140%);
+      -webkit-backdrop-filter: blur(20px) saturate(140%);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 26px;
+      padding: 34px 32px;
+      box-shadow: 0 28px 70px rgba(0,0,0,0.4);
       color: #fff;
-      padding: 56px 48px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+      transition: transform 0.35s cubic-bezier(0.16,1,0.3,1),
+                  box-shadow 0.35s cubic-bezier(0.16,1,0.3,1);
     }
-    .contact-box h2 {
+    .contact-card:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 36px 90px rgba(0,0,0,0.5);
+    }
+    .contact-pill {
+      display: inline-block;
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #d1fae5;
+      font-size: 12px; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      padding: 6px 14px; border-radius: 50px; margin-bottom: 18px;
+    }
+    .contact-title {
       font-family: 'Playfair Display', Georgia, serif;
-      font-size: 30px;
-      font-weight: 800;
-      margin-bottom: 12px;
+      font-size: clamp(30px, 4vw, 44px);
+      font-weight: 800; line-height: 1.08; margin-bottom: 18px; color: #fff;
     }
-    .contact-box > p { color: #a7f3d0; font-size: 16px; margin-bottom: 36px }
-    .contact-info { display: flex; flex-direction: column; gap: 20px; margin-bottom: 36px }
-    .contact-item {
-      display: flex;
-      align-items: center;
-      gap: 14px;
+    .contact-phone {
+      display: inline-block;
+      font-size: clamp(26px, 3.4vw, 36px);
+      font-weight: 800; color: #fff; text-decoration: none;
+      letter-spacing: -0.01em; line-height: 1.1;
+      transition: color 0.2s;
     }
-    .contact-icon {
-      width: 44px;
-      height: 44px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-      flex-shrink: 0;
+    .contact-phone:hover { color: #fbbf24; }
+    .contact-meta { margin-top: 12px; font-size: 15px; color: #c7e9d6; line-height: 1.6; }
+    .contact-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 26px; }
+    .contact-cta {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: #fbbf24; color: #1a202c;
+      padding: 14px 26px; border-radius: 50px;
+      font-weight: 700; font-size: 15px; text-decoration: none;
+      box-shadow: 0 6px 22px rgba(251,191,36,0.35);
+      transition: transform 0.25s, box-shadow 0.25s;
     }
-    .contact-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: #6ee7b7 }
-    .contact-value { font-size: 16px; font-weight: 600; color: #fff }
-    .contact-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      background: #fbbf24;
-      color: #1a202c;
-      padding: 16px 36px;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: 16px;
-      text-decoration: none;
-      transition: transform 0.3s, box-shadow 0.3s;
-      box-shadow: 0 4px 20px rgba(251,191,36,0.3);
-      width: fit-content;
+    .contact-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(251,191,36,0.5); }
+    .contact-cta-wa {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: rgba(37,211,102,0.18);
+      border: 1px solid rgba(37,211,102,0.65);
+      color: #eafff2;
+      padding: 13px 22px; border-radius: 50px;
+      font-weight: 600; font-size: 15px; text-decoration: none;
+      transition: background 0.25s, transform 0.25s;
     }
-    .contact-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 30px rgba(251,191,36,0.45);
+    .contact-cta-wa svg { fill: #25d366; flex-shrink: 0; }
+    .contact-cta-wa:hover { background: rgba(37,211,102,0.32); transform: translateY(-2px); }
+    .contact-maplink {
+      display: inline-block; margin-top: 18px;
+      color: #9fe7c0; font-size: 14px; text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.2s, color 0.2s;
     }
-    .contact-map {
-      min-height: 360px;
-      background: #e5e7eb;
-    }
-    .contact-map iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-      display: block;
-    }
+    .contact-maplink:hover { color: #d1fae5; border-bottom-color: rgba(159,231,192,0.7); }
 
-    /* Fallback se non c'e' mappa */
-    .contact-box-full {
-      background: linear-gradient(160deg, #0f4c35, #065f46, #047857);
-      color: #fff;
-      border-radius: 24px;
-      padding: 60px 52px;
-      text-align: center;
-      max-width: 800px;
-      margin: 0 auto;
-      box-shadow: 0 24px 64px rgba(15,76,53,0.25);
-    }
-    .contact-box-full .contact-info {
-      flex-direction: row;
+    /* Fallback senza mappa: scheda centrata su sfondo brand */
+    .contact-stage-nomap {
+      background: linear-gradient(160deg, #0f4c35, #065f46 55%, #047857);
+      align-items: center;
       justify-content: center;
-      flex-wrap: wrap;
-      gap: 32px;
+      min-height: 460px;
     }
-    .contact-box-full .contact-item {
-      flex-direction: column;
-      text-align: center;
-    }
-    .contact-box-full .contact-btn {
-      margin: 0 auto;
-    }
+    .contact-card-center { width: 100%; max-width: 560px; }
 
     /* ── Floating WhatsApp ────────────────────────────────────── */
     .whatsapp-float {
@@ -813,9 +817,17 @@
       .nav-cta { display: none }
       .hero-content { padding: 72px 20px 64px }
       .hero h1 { font-size: 28px }
-      .contact-wrapper { grid-template-columns: 1fr }
-      .contact-map { min-height: 280px }
-      .contact-box { padding: 40px 28px }
+      .contact-stage { display: block; min-height: 0; padding: 0; overflow: visible }
+      .contact-map-bg { position: relative; height: 260px }
+      .contact-overlay, .contact-accent { display: none }
+      .contact-card {
+        width: auto; min-width: 0; max-width: none;
+        margin: -48px 16px 0;
+        background: rgba(8,28,20,0.92);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      }
+      .contact-stage-nomap { padding: 40px 16px; min-height: 0 }
+      .contact-stage-nomap .contact-card { margin: 0 auto }
       .section { padding: 56px 0 }
       .section-title { font-size: 28px }
       .services-grid { grid-template-columns: repeat(2, 1fr); gap: 14px }
@@ -830,6 +842,10 @@
     }
     @media (max-width: 480px) {
       .services-grid { grid-template-columns: 1fr }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .contact-card { transition: none }
+      .contact-card:hover { transform: none }
     }
   </style>
 </head>
@@ -993,100 +1009,47 @@
 
 <!-- Contact -->
 <section class="section" id="contatti">
-  <div class="container">
-    <div class="reveal">
-      <div class="section-eyebrow">Contatti</div>
-      <h2 class="section-title" style="margin-bottom:48px">Vieni a trovarci</h2>
-    </div>
-
+  <div class="contact-stage{% if google_place_id == "" %} contact-stage-nomap{% endif %}">
     {% if google_place_id != "" %}
-    <div class="contact-wrapper reveal-scale">
-      <div class="contact-box">
-        <h2>{{ cta_text }}</h2>
-        <p>Siamo qui per aiutarti — contattaci oggi stesso!</p>
-        <div class="contact-info">
-          {% if phone != "" %}
-          <div class="contact-item">
-            <div class="contact-icon">📞</div>
-            <div>
-              <div class="contact-label">Telefono</div>
-              <div class="contact-value">{{ phone }}</div>
-            </div>
-          </div>
-          {% endif %}
-          <div class="contact-item">
-            <div class="contact-icon">📍</div>
-            <div>
-              <div class="contact-label">Dove siamo</div>
-              <div class="contact-value">{{ city }}{% if province != "" %}, {{ province }}{% endif %}</div>
-            </div>
-          </div>
-          {% if address != "" %}
-          <div class="contact-item">
-            <div class="contact-icon">🏠</div>
-            <div>
-              <div class="contact-label">Indirizzo</div>
-              <div class="contact-value">{{ address }}</div>
-            </div>
-          </div>
-          {% endif %}
-        </div>
-        {% if phone != "" %}
-        <a href="tel:{{ phone_clean }}" class="contact-btn">📞 Chiama ora</a>
-        {% endif %}
-        {% if google_maps_url != "" %}
-        <a href="{{ google_maps_url }}" target="_blank" rel="noopener"
-           style="margin-top:16px;color:#6ee7b7;font-size:14px;text-decoration:none">🗺️ Apri su Google Maps ↗</a>
-        {% endif %}
-      </div>
-      <div class="contact-map">
-        <iframe
-          src="https://maps.google.com/maps?q={{ map_query }}&hl=it&z=15&output=embed"
-          loading="lazy"
-          referrerpolicy="no-referrer-when-downgrade"
-          title="Mappa {{ company_name }}"
-          allowfullscreen>
-        </iframe>
-      </div>
+    <div class="contact-map-bg">
+      <iframe
+        src="https://maps.google.com/maps?q={{ map_query }}&hl=it&z=15&output=embed"
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Mappa {{ company_name }}"
+        allowfullscreen>
+      </iframe>
     </div>
-    {% else %}
-    <div class="contact-box-full reveal-scale">
-      <h2>{{ cta_text }}</h2>
-      <p style="color:#a7f3d0;font-size:16px;margin-bottom:36px">Siamo qui per aiutarti — contattaci oggi stesso!</p>
-      <div class="contact-info">
+    <div class="contact-overlay"></div>
+    {% endif %}
+    <div class="contact-accent"></div>
+
+    <div class="contact-card{% if google_place_id == "" %} contact-card-center{% endif %} reveal-scale">
+      <span class="contact-pill">{{ city }}{% if province != "" %} ({{ province }}){% endif %} · {{ category_label }}</span>
+      <h2 class="contact-title">Vieni a trovarci</h2>
+
+      {% if phone != "" %}
+      <a href="tel:{{ phone_clean }}" class="contact-phone">{{ phone }}</a>
+      {% endif %}
+
+      <p class="contact-meta">📍 {% if address != "" %}{{ address }} · {% endif %}{{ city }}{% if province != "" %}, {{ province }}{% endif %}</p>
+
+      <div class="contact-actions">
         {% if phone != "" %}
-        <div class="contact-item">
-          <div class="contact-icon">📞</div>
-          <div>
-            <div class="contact-label">Telefono</div>
-            <div class="contact-value">{{ phone }}</div>
-          </div>
-        </div>
+        <a href="tel:{{ phone_clean }}" class="contact-cta">📞 Chiama ora</a>
         {% endif %}
-        <div class="contact-item">
-          <div class="contact-icon">📍</div>
-          <div>
-            <div class="contact-label">Dove siamo</div>
-            <div class="contact-value">{{ city }}{% if province != "" %}, {{ province }}{% endif %}</div>
-          </div>
-        </div>
-        {% if google_maps_url != "" %}
-        <div class="contact-item">
-          <div class="contact-icon">🗺️</div>
-          <div>
-            <div class="contact-label">Mappa</div>
-            <div class="contact-value">
-              <a href="{{ google_maps_url }}" target="_blank" rel="noopener" style="color:#6ee7b7">Apri su Maps ↗</a>
-            </div>
-          </div>
-        </div>
+        {% if whatsapp_url != "" %}
+        <a href="{{ whatsapp_url }}" target="_blank" rel="noopener" class="contact-cta-wa">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp
+        </a>
         {% endif %}
       </div>
-      {% if phone != "" %}
-      <a href="tel:{{ phone_clean }}" class="contact-btn">📞 Chiama ora</a>
+
+      {% if google_maps_url != "" %}
+      <a href="{{ google_maps_url }}" target="_blank" rel="noopener" class="contact-maplink">Apri su Google Maps ↗</a>
       {% endif %}
     </div>
-    {% endif %}
   </div>
 </section>
 
