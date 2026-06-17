@@ -6,7 +6,7 @@ class Company < ApplicationRecord
   has_many :leads, dependent: :destroy
 
   CATEGORIES = %w[
-    restaurant bar pizzeria
+    restaurant bar pizzeria enoteca
     plumber electrician builder
     retail shop
     lawyer accountant notary

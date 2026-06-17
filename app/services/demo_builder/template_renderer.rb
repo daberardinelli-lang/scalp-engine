@@ -149,6 +149,7 @@ module DemoBuilder
     def category_label
       {
         "restaurant"    => "Ristorante",
+        "enoteca"       => "Enoteca",
         "artisan"       => "Artigiano",
         "shop"          => "Negozio",
         "professional"  => "Studio Professionale",

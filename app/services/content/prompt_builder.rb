@@ -18,6 +18,7 @@ module Content
       "restaurant"  => "Ristorante",
       "bar"         => "Bar / Caffetteria",
       "pizzeria"    => "Pizzeria",
+      "enoteca"     => "Enoteca",
       "plumber"     => "Idraulico",
       "electrician" => "Elettricista",
       "builder"     => "Impresa edile",
